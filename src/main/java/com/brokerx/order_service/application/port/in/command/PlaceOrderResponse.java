@@ -10,36 +10,26 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * Réponse retournée après placement d'un ordre
- * Contient les informations de confirmation ou de rejet
+ * Response returned after placing an order
+ * Contains confirmation or rejection details
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PlaceOrderResponse {
-    
-    // Identifiants
-    private String orderId; // UUID généré par le système
-    
-    // État de l'ordre
+    private String orderId;
     private OrderStatus status;
-    private String rejectReason; // Présent uniquement si status = REJECTED
-    
-    // Informations de l'ordre accepté
+    private String rejectReason;
     private Long stockId;
-    private BigDecimal quantity;
-    private BigDecimal price; // null pour les ordres MARKET
-    private BigDecimal reservedAmount; // Montant réservé dans le wallet
-    
-    // Métadonnées
+    private int quantity;
+    private BigDecimal price;
+    private BigDecimal reservedAmount;
     private LocalDateTime timestamp;
     private boolean success;
     
-    // Factory methods
-    
-    public static PlaceOrderResponse accepted(String orderId, Long stockId, 
-                                            BigDecimal quantity, BigDecimal price, BigDecimal reservedAmount) {
+    public static PlaceOrderResponse accepted(String orderId, Long stockId,
+                                            int quantity, BigDecimal price, BigDecimal reservedAmount) {
         return PlaceOrderResponse.builder()
                 .orderId(orderId)
                 .status(OrderStatus.ACCEPTED)

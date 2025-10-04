@@ -1,8 +1,5 @@
 package com.brokerx.order_service.domain.exception;
 
-/**
- * Exception de base pour toutes les erreurs liées aux ordres
- */
 public class OrderException extends RuntimeException {
     
     private final String errorCode;
@@ -21,15 +18,13 @@ public class OrderException extends RuntimeException {
         return errorCode;
     }
     
-    // Factory methods simplifiés
-    
     public static OrderException insufficientFunds(Long stockId, java.math.BigDecimal required, java.math.BigDecimal available) {
         return new OrderException("INSUFFICIENT_FUNDS", 
             String.format("Fonds insuffisants pour le stock %s. Requis: %s, Disponible: %s", 
                 stockId, required, available));
     }
     
-    public static OrderException invalidQuantity(java.math.BigDecimal quantity) {
+    public static OrderException invalidQuantity(int quantity) {
         return new OrderException("INVALID_QUANTITY", 
             String.format("Quantité invalide: %s. Doit être > 0", quantity));
     }

@@ -1,4 +1,4 @@
-package com.brokerx.order_service.domain.model;
+package com.brokerx.order_service.application.port.in.command;
 
 import lombok.Data;
 import lombok.Builder;
@@ -7,21 +7,17 @@ import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * Domain model representing a stock order
- * Follows DDD principles with embedded business methods
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Order {
+public class OrderResponse{
     private Long id;
-    private Long walletId;
     private Long stockId;
-    private OrderSide side;
-    private OrderType type;
+    private String stockSymbol;
+    private String side;
+    private String type;
     private int quantity;
     private BigDecimal price;
-    private OrderStatus status;
+    private String status;
 }

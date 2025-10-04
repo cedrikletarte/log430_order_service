@@ -8,26 +8,26 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
 /**
- * DTO Record pour les requêtes de création d'ordre (version simplifiée)
+ * DTO Record for placing an order
  */
 public record PlaceOrderRequest(
         
-    @NotNull(message = "L'ID du stock est obligatoire")
-    @Positive(message = "L'ID du stock doit être positif")
-    Long stockId,
+    @NotNull(message = "The stock symbol is required")
+    @NotBlank(message = "The stock symbol cannot be empty")
+    String stockSymbol,
     
-    @NotNull(message = "Le sens de l'ordre (BUY/SELL) est obligatoire")
+    @NotNull(message = "The order side (BUY/SELL) is required")
     OrderSide side,
     
-    @NotNull(message = "Le type d'ordre (MARKET/LIMIT) est obligatoire")
+    @NotNull(message = "The order type (MARKET/LIMIT) is required")
     OrderType type,
     
-    @NotNull(message = "La quantité est obligatoire")
-    @Positive(message = "La quantité doit être positive")
-    @DecimalMax(value = "999999999", message = "La quantité est trop importante")
-    BigDecimal quantity,
+    @NotNull(message = "Quantity is required")
+    @Positive(message = "Quantity must be positive")
+    @DecimalMax(value = "999999999", message = "Quantity is too large")
+    int quantity,
     
-    @Positive(message = "Le prix doit être positif")
-    @DecimalMax(value = "999999999.99", message = "Le prix est trop élevé")
-    BigDecimal price // Optionnel pour les ordres MARKET
+    @Positive(message = "Price must be positive")
+    @DecimalMax(value = "999999999.99", message = "Price is too large")
+    BigDecimal price // Optional for MARKET orders
 ) {}

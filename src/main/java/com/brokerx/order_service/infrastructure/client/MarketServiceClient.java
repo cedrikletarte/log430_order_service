@@ -1,0 +1,110 @@
+package com.brokerx.order_service.infrastructure.client;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import org.springframework.web.client.HttpClientErrorException;
+
+/**
+ * Client to communicate with the Market Service.
+ * Makes secure internal HTTP calls via X-Service-Token.
+ */
+@Slf4j
+@Component
+public class MarketServiceClient {
+
+    private final RestTemplate restTemplate;
+    private final String marketServiceUrl;
+    private final String serviceSecret;
+
+    public MarketServiceClient(
+            RestTemplate restTemplate,
+            @Value("${market.service.url}") String marketServiceUrl,
+            @Value("${service.secret}") String serviceSecret) {
+        this.restTemplate = restTemplate;
+        this.marketServiceUrl = marketServiceUrl;
+        this.serviceSecret = serviceSecret;
+    }
+
+    public StockResponse getStockBySymbol(String symbol) {
+        String url = marketServiceUrl + "/internal/stock/" + symbol;
+        
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Service-Token", serviceSecret);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            
+            log.debug("Calling market service: GET {}", url);
+            
+            ResponseEntity<StockResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                StockResponse.class
+            );
+            
+            log.info("Market service response: status={}, body={}", response.getStatusCode(), response.getBody());
+            
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                log.debug("Stock data retrieved for symbol: {}", symbol);
+                return response.getBody();
+            }
+            
+            return null;
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Stock symbol not found: {}", symbol);
+            return null;
+        } catch (Exception e) {
+            log.error("Error calling market service for symbol {}: {}", symbol, e.getMessage());
+            return null;
+        }
+    }
+
+    public StockResponse getStockById(Long stockId) {
+        String url = marketServiceUrl + "/internal/stock/id/" + stockId;
+        
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Service-Token", serviceSecret);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            
+            log.debug("Calling market service: GET {}", url);
+            
+            ResponseEntity<StockResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                StockResponse.class
+            );
+            
+            log.info("Market service response: status={}, body={}", response.getStatusCode(), response.getBody());
+            
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                log.debug("Stock data retrieved for id: {}", stockId);
+                return response.getBody();
+            }
+            
+            return null;
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Stock id not found: {}", stockId);
+            return null;
+        } catch (Exception e) {
+            log.error("Error calling market service for stock id {}: {}", stockId, e.getMessage());
+            return null;
+        }
+    }
+
+
+    /**
+     * DTO stock response
+     */
+    public record StockResponse(
+        Long id,
+        String symbol,
+        String name,
+        java.math.BigDecimal currentPrice
+    ) {}
+}

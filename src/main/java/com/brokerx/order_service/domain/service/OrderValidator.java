@@ -8,16 +8,14 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 
 /**
- * Service de validation des ordres selon les règles métier
- * Implémente les contrôles pré-trade fondamentaux
+ * Validates orders based on business rules
+ * Implements fundamental pre-trade checks
  */
 @Service
 public class OrderValidator {
     
     /**
-     * Valide un ordre avant soumission
-     * @param order L'ordre à valider
-     * @throws OrderException si l'ordre ne respecte pas les règles métier
+     * Validates an order before submission
      */
     public void validateForCreation(Order order) {
         validateBasicFields(order);
@@ -27,7 +25,7 @@ public class OrderValidator {
     }
     
     /**
-     * Validation des champs obligatoires
+     * Validation of mandatory fields
      */
     private void validateBasicFields(Order order) {
         if (order.getStockId() == null) {
@@ -42,33 +40,29 @@ public class OrderValidator {
             throw new OrderException("MISSING_TYPE", "Le type d'ordre (MARKET/LIMIT) est obligatoire");
         }
         
-        if (order.getUserId() == null) {
-            throw new OrderException("MISSING_USER_ID", "L'identifiant utilisateur est obligatoire");
+        if (order.getWalletId() == null) {
+            throw new OrderException("MISSING_WALLET_ID", "L'identifiant du portefeuille est obligatoire");
         }
     }
     
     /**
-     * Validation de la quantité
+     * Validation of quantity
      */
     private void validateQuantity(Order order) {
-        BigDecimal quantity = order.getQuantity();
+        int quantity = order.getQuantity();
         
-        if (quantity == null) {
-            throw OrderException.invalidQuantity(null);
-        }
-        
-        if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
+        if (quantity <= 0) {
             throw OrderException.invalidQuantity(quantity);
         }
         
         // Vérification de base : la quantité doit être un entier positif
-        if (quantity.stripTrailingZeros().scale() > 0) {
+        if (quantity > 0) {
             throw new OrderException("INVALID_QUANTITY_DECIMAL", "La quantité doit être un nombre entier");
         }
     }
     
     /**
-     * Validation du prix pour les ordres LIMIT
+     * Validation of price for LIMIT orders
      */
     private void validatePrice(Order order) {
         if (order.getType() == OrderType.LIMIT) {
@@ -96,12 +90,12 @@ public class OrderValidator {
     }
     
     /**
-     * Validation des règles métier spécifiques
+     * Validation of complex business rules
      */
     private void validateBusinessRules(Order order) {
-        // Vérifier une limite simple de quantité
-        BigDecimal maxQuantity = new BigDecimal("1000000");
-        if (order.getQuantity().compareTo(maxQuantity) > 0) {
+        // Verify that the order quantity does not exceed a maximum limit
+        int maxQuantity = 1000000;
+        if (0 > order.getQuantity() || order.getQuantity() > maxQuantity) {
             throw new OrderException("ORDER_SIZE_TOO_LARGE", 
                 String.format("La quantité %s dépasse la limite maximale %s", 
                     order.getQuantity(), maxQuantity));

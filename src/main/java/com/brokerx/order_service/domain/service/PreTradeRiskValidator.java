@@ -33,11 +33,11 @@ public class PreTradeRiskValidator {
      * Validates price bands to prevent anomalous orders
      */
     public void validatePriceBands(Order order, BigDecimal currentPrice, BigDecimal maxDeviationPercent) {
-        if (order.getType() != OrderType.LIMIT || order.getPrice() == null || currentPrice == null) {
+        if (order.getType() != OrderType.LIMIT || order.getLimitPrice() == null || currentPrice == null) {
             return; // No check for MARKET orders or without reference price
         }
         
-        BigDecimal orderPrice = order.getPrice();
+        BigDecimal orderPrice = order.getLimitPrice();
         BigDecimal deviation = maxDeviationPercent.divide(new BigDecimal("100")); // Convertir en décimal
         
         BigDecimal minPrice = currentPrice.multiply(BigDecimal.ONE.subtract(deviation));
@@ -79,7 +79,7 @@ public class PreTradeRiskValidator {
         int quantity = order.getQuantity();
         
         if (order.getType() == OrderType.LIMIT) {
-            return BigDecimal.valueOf(quantity).multiply(order.getPrice());
+            return BigDecimal.valueOf(quantity).multiply(order.getLimitPrice());
         } else if (order.getType() == OrderType.MARKET && currentPrice != null) {
             // For a MARKET order, add a safety margin to account for price fluctuations
             BigDecimal safetyMargin = new BigDecimal("1.05"); // +5% margin
@@ -94,8 +94,8 @@ public class PreTradeRiskValidator {
      * Calculate the notional value of an order
      */
     private BigDecimal calculateOrderNotional(Order order) {
-        if (order.getType() == OrderType.LIMIT && order.getPrice() != null) {
-            return BigDecimal.valueOf(order.getQuantity()).multiply(order.getPrice());
+        if (order.getType() == OrderType.LIMIT && order.getLimitPrice() != null) {
+            return BigDecimal.valueOf(order.getQuantity()).multiply(order.getLimitPrice());
         }
         // For MARKET orders, we cannot calculate the exact notional in advance
         return null;

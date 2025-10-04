@@ -23,19 +23,21 @@ public class PlaceOrderResponse {
     private String rejectReason;
     private Long stockId;
     private int quantity;
-    private BigDecimal price;
+    private BigDecimal limitPrice;
+    private BigDecimal executedPrice;
     private BigDecimal reservedAmount;
     private LocalDateTime timestamp;
     private boolean success;
     
     public static PlaceOrderResponse accepted(String orderId, Long stockId,
-                                            int quantity, BigDecimal price, BigDecimal reservedAmount) {
+                                            int quantity, BigDecimal limitPrice, BigDecimal executedPrice, BigDecimal reservedAmount) {
         return PlaceOrderResponse.builder()
                 .orderId(orderId)
                 .status(OrderStatus.ACCEPTED)
                 .stockId(stockId)
                 .quantity(quantity)
-                .price(price)
+                .limitPrice(limitPrice)
+                .executedPrice(executedPrice)
                 .reservedAmount(reservedAmount)
                 .timestamp(LocalDateTime.now())
                 .success(true)

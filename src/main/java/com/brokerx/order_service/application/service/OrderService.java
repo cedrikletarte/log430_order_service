@@ -7,6 +7,7 @@ import com.brokerx.order_service.application.port.in.useCase.OrderUseCase;
 import com.brokerx.order_service.application.port.out.OrderRepositoryPort;
 import com.brokerx.order_service.domain.model.Order;
 import com.brokerx.order_service.domain.model.OrderStatus;
+import com.brokerx.order_service.domain.model.OrderType;
 import com.brokerx.order_service.infrastructure.client.WalletServiceClient;
 import com.brokerx.order_service.infrastructure.client.MarketServiceClient;
 
@@ -61,6 +62,20 @@ public class OrderService implements OrderUseCase {
             return PlaceOrderResponse.rejected(null, reason);
         }
 
+        // Calculate the reserved amount
+        BigDecimal reservedAmount = calculateReservedAmount(command, stockResponse);
+
+        // Check if wallet has sufficient balance
+        if (walletResponse.balance().compareTo(reservedAmount) < 0) {
+            String reason = String.format("Insufficient funds. Required: %s, Available: %s", 
+                    reservedAmount, walletResponse.balance());
+            log.warn("Order rejected: {}", reason);
+            return PlaceOrderResponse.rejected(stockResponse.id(), reason);
+        }
+
+        log.info("Wallet balance check passed: required={}, available={}", 
+                reservedAmount, walletResponse.balance());
+
         // Create the order
         Order order = Order.builder()
                 .walletId(walletResponse.id())
@@ -68,7 +83,8 @@ public class OrderService implements OrderUseCase {
                 .side(command.getSide())
                 .type(command.getType())
                 .quantity(command.getQuantity())
-                .price(command.getPrice())
+                .limitPrice(command.getLimitPrice())
+                .executedPrice(command.getType() == OrderType.MARKET ? stockResponse.currentPrice() : null)
                 .status(OrderStatus.ACCEPTED)
                 .build();
 
@@ -78,15 +94,20 @@ public class OrderService implements OrderUseCase {
         log.info("Order accepted: id={}, walletId={}, stockId={}",
                 savedOrder.getId(), savedOrder.getWalletId(), savedOrder.getStockId());
 
-        // Calculate the reserved amount
-        BigDecimal reservedAmount = calculateReservedAmount(command, stockResponse);
+        // If MARKET order, execute the transaction immediately and debit the wallet
+        if (command.getType() == OrderType.MARKET) {
+            log.info("Executing MARKET order: debiting {} from user {}", reservedAmount, command.getUserId());
+            walletServiceClient.debitWallet(command.getUserId(), reservedAmount);
+            log.info("MARKET order executed successfully for order ID: {}", savedOrder.getId());
+        }
 
         // Return the response
         return PlaceOrderResponse.accepted(
                 savedOrder.getId().toString(),
                 savedOrder.getStockId(),
                 savedOrder.getQuantity(),
-                savedOrder.getPrice(),
+                savedOrder.getLimitPrice(),
+                savedOrder.getExecutedPrice(),
                 reservedAmount);
     }
 
@@ -110,7 +131,8 @@ public class OrderService implements OrderUseCase {
                     .side(order.getSide().toString())
                     .type(order.getType().toString())
                     .quantity(order.getQuantity())
-                    .price(order.getPrice())
+                    .limitPrice(order.getLimitPrice())
+                    .executedPrice(order.getExecutedPrice())
                     .status(order.getStatus().toString())
                     .build());
         } catch (NumberFormatException e) {
@@ -141,7 +163,8 @@ public class OrderService implements OrderUseCase {
                     .side(order.getSide().toString())
                     .type(order.getType().toString())
                     .quantity(order.getQuantity())
-                    .price(order.getPrice())
+                    .limitPrice(order.getLimitPrice())
+                    .executedPrice(order.getExecutedPrice())
                     .status(order.getStatus().toString())
                     .build();
             orders.add(dto);
@@ -163,9 +186,9 @@ public class OrderService implements OrderUseCase {
             MarketServiceClient.StockResponse stockResponse) {
         BigDecimal price;
 
-        // For a LIMIT order, use the specified price
-        if (command.getPrice() != null) {
-            price = command.getPrice();
+        // For a LIMIT order, use the specified limit price
+        if (command.getLimitPrice() != null) {
+            price = command.getLimitPrice();
         } else {
             // For a MARKET order, use the current market price
             price = stockResponse.currentPrice();

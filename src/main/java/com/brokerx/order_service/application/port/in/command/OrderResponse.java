@@ -18,6 +18,7 @@ public class OrderResponse{
     private String side;
     private String type;
     private int quantity;
-    private BigDecimal price;
+    private BigDecimal limitPrice;
+    private BigDecimal executedPrice;
     private String status;
 }

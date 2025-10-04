@@ -49,8 +49,11 @@ public class OrderEntity {
     @Column(name = "quantity", nullable = false)
     private int quantity;
 
-    @Column(name = "price")
-    private BigDecimal price;
+    @Column(name = "limit_price")
+    private BigDecimal limitPrice;
+
+    @Column(name = "executed_price")
+    private BigDecimal executedPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

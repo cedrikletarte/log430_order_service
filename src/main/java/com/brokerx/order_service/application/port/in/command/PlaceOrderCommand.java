@@ -24,5 +24,6 @@ public class PlaceOrderCommand {
     private OrderSide side;
     private OrderType type;
     private int quantity;
-    private BigDecimal price;
+    private BigDecimal limitPrice;  // For LIMIT orders
+    private BigDecimal executedPrice; // For MARKET orders (calculated by backend)
 }

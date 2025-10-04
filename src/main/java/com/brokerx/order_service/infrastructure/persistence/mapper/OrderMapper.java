@@ -18,7 +18,8 @@ public class OrderMapper {
                 .side(order.getSide())
                 .type(order.getType())
                 .quantity(order.getQuantity())
-                .price(order.getPrice())
+                .limitPrice(order.getLimitPrice())
+                .executedPrice(order.getExecutedPrice())
                 .status(order.getStatus())
                 .build();
     }
@@ -33,7 +34,8 @@ public class OrderMapper {
                 .side(entity.getSide())
                 .type(entity.getType())
                 .quantity(entity.getQuantity())
-                .price(entity.getPrice())
+                .limitPrice(entity.getLimitPrice())
+                .executedPrice(entity.getExecutedPrice())
                 .status(entity.getStatus())
                 .build();
     }

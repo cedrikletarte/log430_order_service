@@ -49,9 +49,9 @@ public class OrderController {
         String userId = authentication.getPrincipal().toString();
         Long userIdLong = Long.parseLong(userId);
 
-        log.info("Received order request: user={}, symbol={}, side={}, type={}, qty={}, price={}", 
+        log.info("Received order request: user={}, symbol={}, side={}, type={}, qty={}, limitPrice={}, executedPrice={}", 
                 userId, request.stockSymbol(), request.side(), request.type(), 
-                request.quantity(), request.price());
+                request.quantity(), request.limitPrice(), request.executedPrice());
 
         // Convert to command
         PlaceOrderCommand command = PlaceOrderCommand.builder()
@@ -60,7 +60,8 @@ public class OrderController {
                 .side(request.side())
                 .type(request.type())
                 .quantity(request.quantity())
-                .price(request.price())
+                .limitPrice(request.limitPrice())
+                .executedPrice(request.executedPrice())
                 .build();
 
         // Execute use case

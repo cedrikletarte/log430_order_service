@@ -66,7 +66,7 @@ public class OrderValidator {
      */
     private void validatePrice(Order order) {
         if (order.getType() == OrderType.LIMIT) {
-            BigDecimal price = order.getPrice();
+            BigDecimal price = order.getLimitPrice();
             
             if (price == null) {
                 throw new OrderException("MISSING_PRICE", "Le prix est obligatoire pour un ordre LIMIT");
@@ -82,7 +82,7 @@ public class OrderValidator {
             }
         } else if (order.getType() == OrderType.MARKET) {
             // Les ordres MARKET ne doivent pas avoir de prix
-            if (order.getPrice() != null) {
+            if (order.getExecutedPrice() != null) {
                 throw new OrderException("MARKET_ORDER_WITH_PRICE", 
                     "Un ordre MARKET ne doit pas spécifier de prix");
             }

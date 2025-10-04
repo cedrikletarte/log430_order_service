@@ -22,6 +22,7 @@ public class Order {
     private OrderSide side;
     private OrderType type;
     private int quantity;
-    private BigDecimal price;
+    private BigDecimal limitPrice;
+    private BigDecimal executedPrice;
     private OrderStatus status;
 }

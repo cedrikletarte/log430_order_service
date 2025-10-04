@@ -64,11 +64,33 @@ public class WalletServiceClient {
         }
     }
 
-    public boolean hasSufficientBalance(Double amount) {
-        return true;
+    /**
+     * Debit the wallet of a user by a specified amount.
+     * Used when executing a MARKET order.
+     */
+    public void debitWallet(Long userId, BigDecimal amount) {
+        String url = walletServiceUrl + "/internal/wallet/debit/" + userId + "/" + amount;
+        
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Service-Token", serviceSecret);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            
+            log.debug("Calling wallet service to debit: POST {}", url);
+            
+            restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                Void.class
+            );
+            
+            log.info("Successfully debited {} from user {}", amount, userId);
+        } catch (Exception e) {
+            log.error("Error debiting wallet for user ID: {}, amount: {}", userId, amount, e);
+            throw new RuntimeException("Failed to debit wallet", e);
+        }
     }
-
-    
 
     /**
      * DTO wallet response

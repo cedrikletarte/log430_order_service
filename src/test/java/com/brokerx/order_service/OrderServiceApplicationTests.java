@@ -1,4 +1,4 @@
-package com.brokerx.market_service;
+package com.brokerx.order_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

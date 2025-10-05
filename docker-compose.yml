@@ -3,11 +3,11 @@ services:
   # ============================================
   # 📋 ORDER SERVICE
   # ============================================
-  order_service:
+  order-service:
     build: .
-    container_name: order_service
+    container_name: order-service
     depends_on:
-      order_postgres:
+      order-postgres:
         condition: service_healthy
     expose:
       - "8080"
@@ -21,9 +21,9 @@ services:
     networks:
       - brokerx-network
 
-  order_postgres:
+  order-postgres:
     image: postgres:17
-    container_name: order_postgres
+    container_name: order-postgres
     restart: always
     shm_size: 128mb
     environment:

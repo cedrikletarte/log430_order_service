@@ -6,9 +6,12 @@ import com.brokerx.order_service.application.port.in.command.PlaceOrderResponse;
 import com.brokerx.order_service.application.port.in.useCase.OrderUseCase;
 import com.brokerx.order_service.application.port.out.OrderRepositoryPort;
 import com.brokerx.order_service.domain.model.Order;
+import com.brokerx.order_service.domain.model.OrderSide;
 import com.brokerx.order_service.domain.model.OrderStatus;
 import com.brokerx.order_service.domain.model.OrderType;
 import com.brokerx.order_service.infrastructure.client.WalletServiceClient;
+import com.brokerx.order_service.infrastructure.client.MarketServiceClient.StockResponse;
+import com.brokerx.order_service.infrastructure.client.WalletServiceClient.WalletResponse;
 import com.brokerx.order_service.infrastructure.client.MarketServiceClient;
 
 import java.math.BigDecimal;
@@ -85,7 +88,7 @@ public class OrderService implements OrderUseCase {
                 .quantity(command.getQuantity())
                 .limitPrice(command.getLimitPrice())
                 .executedPrice(command.getType() == OrderType.MARKET ? stockResponse.currentPrice() : null)
-                .status(OrderStatus.ACCEPTED)
+                .status(command.getType() == OrderType.MARKET ? OrderStatus.ACCEPTED : OrderStatus.FILLED)
                 .build();
 
         // Save the order via the repository
@@ -94,10 +97,16 @@ public class OrderService implements OrderUseCase {
         log.info("Order accepted: id={}, walletId={}, stockId={}",
                 savedOrder.getId(), savedOrder.getWalletId(), savedOrder.getStockId());
 
-        // If MARKET order, execute the transaction immediately and debit the wallet
-        if (command.getType() == OrderType.MARKET) {
+        // If MARKET order and BUY side, execute the transaction immediately and debit the wallet
+        if (command.getType() == OrderType.MARKET && command.getSide() == OrderSide.BUY) {
             log.info("Executing MARKET order: debiting {} from user {}", reservedAmount, command.getUserId());
             walletServiceClient.debitWallet(command.getUserId(), reservedAmount);
+            log.info("MARKET order executed successfully for order ID: {}", savedOrder.getId());
+        }
+        // If MARKET order and SELL side, execute the transaction immediately and credit the wallet
+        if (command.getType() == OrderType.MARKET && command.getSide() == OrderSide.SELL) {
+            log.info("Executing MARKET order: crediting {} to user {}", reservedAmount, command.getUserId());
+            walletServiceClient.creditWallet(command.getUserId(), reservedAmount);
             log.info("MARKET order executed successfully for order ID: {}", savedOrder.getId());
         }
 
@@ -143,7 +152,7 @@ public class OrderService implements OrderUseCase {
 
     @Override
     public List<OrderResponse> getOrdersByUserId(Long userId) {
-        WalletServiceClient.WalletResponse walletResponse = walletServiceClient.getWalletByUserId(userId);
+        WalletResponse walletResponse = walletServiceClient.getWalletByUserId(userId);
         if (walletResponse == null) {
             log.warn("Wallet not found for user ID: {}", userId);
             return List.of();
@@ -153,7 +162,7 @@ public class OrderService implements OrderUseCase {
 
         for (Order order : orderRepositoryPort.findByWalletId(walletResponse.id())) {
             // Fetch the stock symbol
-            MarketServiceClient.StockResponse stockResponse = marketServiceClient.getStockById(order.getStockId());
+            StockResponse stockResponse = marketServiceClient.getStockById(order.getStockId());
             String stockSymbol = stockResponse != null ? stockResponse.symbol() : "UNKNOWN";
             
             OrderResponse dto = OrderResponse.builder()

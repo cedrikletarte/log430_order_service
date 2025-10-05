@@ -12,5 +12,5 @@ WORKDIR /app
 # Run as root (default)
 COPY --from=build /app/target/order_service-0.0.1-SNAPSHOT.jar /app/app.jar
 ENV JAVA_OPTS=""
-EXPOSE 8084
+EXPOSE 8080
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar /app/app.jar"]

@@ -20,12 +20,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Service
 public class OrderService implements OrderUseCase {
+
+    private static final Logger logger = LogManager.getLogger(OrderService.class);
 
     private final OrderRepositoryPort orderRepositoryPort;
     private final WalletServiceClient walletServiceClient;
@@ -41,7 +42,7 @@ public class OrderService implements OrderUseCase {
 
     @Override
     public PlaceOrderResponse placeOrder(PlaceOrderCommand command, String ipAddress, String userAgent) {
-        log.info("Placing order: user={}, stock={}, side={}, type={}, qty={}, ip={}",
+        logger.info("Placing order: user={}, stock={}, side={}, type={}, qty={}, ip={}",
                 command.getUserId(), command.getStockSymbol(), command.getSide(),
                 command.getType(), command.getQuantity(), ipAddress);
 
@@ -50,18 +51,18 @@ public class OrderService implements OrderUseCase {
                 .getStockBySymbol(command.getStockSymbol());
         if (stockResponse == null) {
             String reason = "Invalid stock symbol: " + command.getStockSymbol();
-            log.warn("Order rejected: {}", reason);
+            logger.warn("Order rejected: {}", reason);
             return PlaceOrderResponse.rejected(null, reason);
         }
 
-        log.info("Stock response received: id={}, symbol={}, name={}, price={}",
+        logger.info("Stock response received: id={}, symbol={}, name={}, price={}",
                 stockResponse.id(), stockResponse.symbol(), stockResponse.name(), stockResponse.currentPrice());
 
         // Retrieve the user's wallet
         WalletServiceClient.WalletResponse walletResponse = walletServiceClient.getWalletByUserId(command.getUserId());
         if (walletResponse == null) {
             String reason = "Wallet not found for user ID: " + command.getUserId();
-            log.warn("Order rejected: {}", reason);
+            logger.warn("Order rejected: {}", reason);
             return PlaceOrderResponse.rejected(null, reason);
         }
 
@@ -72,11 +73,11 @@ public class OrderService implements OrderUseCase {
         if (walletResponse.balance().compareTo(reservedAmount) < 0) {
             String reason = String.format("Insufficient funds. Required: %s, Available: %s", 
                     reservedAmount, walletResponse.balance());
-            log.warn("Order rejected: {}", reason);
+            logger.warn("Order rejected: {}", reason);
             return PlaceOrderResponse.rejected(stockResponse.id(), reason);
         }
 
-        log.info("Wallet balance check passed: required={}, available={}", 
+        logger.info("Wallet balance check passed: required={}, available={}", 
                 reservedAmount, walletResponse.balance());
 
         // Create the order
@@ -94,20 +95,20 @@ public class OrderService implements OrderUseCase {
         // Save the order via the repository
         Order savedOrder = orderRepositoryPort.save(order);
 
-        log.info("Order accepted: id={}, walletId={}, stockId={}",
+        logger.info("Order accepted: id={}, walletId={}, stockId={}",
                 savedOrder.getId(), savedOrder.getWalletId(), savedOrder.getStockId());
 
         // If MARKET order and BUY side, execute the transaction immediately and debit the wallet
         if (command.getType() == OrderType.MARKET && command.getSide() == OrderSide.BUY) {
-            log.info("Executing MARKET order: debiting {} from user {}", reservedAmount, command.getUserId());
+            logger.info("Executing MARKET order: debiting {} from user {}", reservedAmount, command.getUserId());
             walletServiceClient.debitWallet(command.getUserId(), reservedAmount);
-            log.info("MARKET order executed successfully for order ID: {}", savedOrder.getId());
+            logger.info("MARKET order executed successfully for order ID: {}", savedOrder.getId());
         }
         // If MARKET order and SELL side, execute the transaction immediately and credit the wallet
         if (command.getType() == OrderType.MARKET && command.getSide() == OrderSide.SELL) {
-            log.info("Executing MARKET order: crediting {} to user {}", reservedAmount, command.getUserId());
+            logger.info("Executing MARKET order: crediting {} to user {}", reservedAmount, command.getUserId());
             walletServiceClient.creditWallet(command.getUserId(), reservedAmount);
-            log.info("MARKET order executed successfully for order ID: {}", savedOrder.getId());
+            logger.info("MARKET order executed successfully for order ID: {}", savedOrder.getId());
         }
 
         // Return the response
@@ -145,7 +146,7 @@ public class OrderService implements OrderUseCase {
                     .status(order.getStatus().toString())
                     .build());
         } catch (NumberFormatException e) {
-            log.warn("Invalid order ID format: {}", orderId);
+            logger.warn("Invalid order ID format: {}", orderId);
             return Optional.empty();
         }
     }
@@ -154,7 +155,7 @@ public class OrderService implements OrderUseCase {
     public List<OrderResponse> getOrdersByUserId(Long userId) {
         WalletResponse walletResponse = walletServiceClient.getWalletByUserId(userId);
         if (walletResponse == null) {
-            log.warn("Wallet not found for user ID: {}", userId);
+            logger.warn("Wallet not found for user ID: {}", userId);
             return List.of();
         }
 
@@ -184,7 +185,7 @@ public class OrderService implements OrderUseCase {
 
     @Override
     public List<OrderResponse> getActiveOrdersByUserId(Long userId) {
-        log.warn("getActiveOrdersByUserId not yet implemented for user: {}", userId);
+        logger.warn("getActiveOrdersByUserId not yet implemented for user: {}", userId);
         return List.of();
     }
 

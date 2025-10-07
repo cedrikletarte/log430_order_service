@@ -88,6 +88,8 @@ public class GatewayHeaderAuthenticationFilter extends OncePerRequestFilter {
         
         // don't filter public paths
         return path.startsWith("/v3/api-docs") ||
+               path.startsWith("/actuator/health") ||
+               path.startsWith("/actuator/prometheus") ||
                path.startsWith("/swagger-ui");
     }
 

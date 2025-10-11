@@ -74,9 +74,9 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(conflictResponse);
         }
 
-        log.info("Received order request: user={}, idempotencyKey={}, symbol={}, side={}, type={}, qty={}, limitPrice={}, executedPrice={}", 
+        log.info("Received order request: user={}, idempotencyKey={}, symbol={}, side={}, type={}, qty={}, limitPrice={}", 
                 userId, request.idempotencyKey(), request.stockSymbol(), request.side(), request.type(), 
-                request.quantity(), request.limitPrice(), request.executedPrice());
+                request.quantity(), request.limitPrice());
 
         // Convert to command
         PlaceOrderCommand command = PlaceOrderCommand.builder()
@@ -86,7 +86,6 @@ public class OrderController {
                 .type(request.type())
                 .quantity(request.quantity())
                 .limitPrice(request.limitPrice())
-                .executedPrice(request.executedPrice())
                 .build();
 
         // Execute use case

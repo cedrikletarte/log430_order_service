@@ -54,11 +54,6 @@ public class OrderValidator {
         if (quantity <= 0) {
             throw OrderException.invalidQuantity(quantity);
         }
-        
-        // Vérification de base : la quantité doit être un entier positif
-        if (quantity > 0) {
-            throw new OrderException("INVALID_QUANTITY_DECIMAL", "La quantité doit être un nombre entier");
-        }
     }
     
     /**

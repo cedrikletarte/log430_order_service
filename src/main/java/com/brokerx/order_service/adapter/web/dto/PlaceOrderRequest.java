@@ -34,10 +34,5 @@ public record PlaceOrderRequest(
     // For LIMIT orders - the price limit set by the user
     @Positive(message = "Limit price must be positive when specified")
     @DecimalMax(value = "999999999.99", message = "Limit price is too large")
-    BigDecimal limitPrice,
-    
-    // For MARKET orders - will be null on request, set by backend after execution
-    @Positive(message = "Executed price must be positive when specified")
-    @DecimalMax(value = "999999999.99", message = "Executed price is too large")
-    BigDecimal executedPrice
+    BigDecimal limitPrice
 ) {}

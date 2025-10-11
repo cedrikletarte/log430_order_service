@@ -12,6 +12,10 @@ import java.math.BigDecimal;
  */
 public record PlaceOrderRequest(
         
+    @NotNull(message = "The idempotency key is required")
+    @NotBlank(message = "The idempotency key cannot be empty")
+    String idempotencyKey,
+    
     @NotNull(message = "The stock symbol is required")
     @NotBlank(message = "The stock symbol cannot be empty")
     String stockSymbol,

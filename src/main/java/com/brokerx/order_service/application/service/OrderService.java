@@ -183,12 +183,6 @@ public class OrderService implements OrderUseCase {
         return orders;
     }
 
-    @Override
-    public List<OrderResponse> getActiveOrdersByUserId(Long userId) {
-        logger.warn("getActiveOrdersByUserId not yet implemented for user: {}", userId);
-        return List.of();
-    }
-
     /**
      * Calculates the amount to reserve in the user's wallet based on the order type and price.
      */

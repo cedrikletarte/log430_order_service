@@ -11,6 +11,8 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 
+import org.hibernate.envers.Audited;
+
 import com.brokerx.order_service.domain.model.OrderSide;
 import com.brokerx.order_service.domain.model.OrderStatus;
 import com.brokerx.order_service.domain.model.OrderType;
@@ -24,6 +26,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Audited
 @Entity
 @Table(name = "orders")
 public class OrderEntity {

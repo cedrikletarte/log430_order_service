@@ -13,7 +13,5 @@ public interface OrderUseCase {
 
     List<OrderResponse> getOrdersByUserId(Long userId);
 
-    List<OrderResponse> getActiveOrdersByUserId(Long userId);
-
     PlaceOrderResponse placeOrder(PlaceOrderCommand command, String ipAddress, String userAgent);
 }

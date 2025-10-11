@@ -46,8 +46,6 @@ public class MarketServiceClient {
                 StockResponse.class
             );
             
-            log.info("Market service response: status={}, body={}", response.getStatusCode(), response.getBody());
-            
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 log.debug("Stock data retrieved for symbol: {}", symbol);
                 return response.getBody();
@@ -79,9 +77,7 @@ public class MarketServiceClient {
                 entity,
                 StockResponse.class
             );
-            
-            log.info("Market service response: status={}, body={}", response.getStatusCode(), response.getBody());
-            
+        
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 log.debug("Stock data retrieved for id: {}", stockId);
                 return response.getBody();

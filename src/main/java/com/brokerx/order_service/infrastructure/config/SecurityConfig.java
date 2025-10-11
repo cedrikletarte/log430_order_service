@@ -36,7 +36,7 @@ public class SecurityConfig {
                         // Swagger endpoint public access
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/**").permitAll()
                         // Authenticated access to wallet endpoints
-                        .requestMatchers("/api/order/**").hasRole("USER")
+                        .requestMatchers("/api/order/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

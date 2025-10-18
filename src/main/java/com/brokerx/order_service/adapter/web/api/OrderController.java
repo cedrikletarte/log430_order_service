@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * REST controller to handle order-related endpoints.
- * Uses hexagonal architecture - depends on use case ports
  */
 @Slf4j
 @RestController

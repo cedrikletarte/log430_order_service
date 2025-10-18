@@ -1,7 +1,7 @@
 package com.brokerx.order_service.domain.model;
 
 /**
- * États possibles d'un ordre dans le système
+ * Enum representing the status of an order
  */
 public enum OrderStatus {
     PENDING,

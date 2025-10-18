@@ -1,7 +1,7 @@
 package com.brokerx.order_service.domain.model;
 
 /**
- * Sens de l'ordre (achat ou vente)
+ * Enum representing the side of an order (BUY or SELL)
  */
 public enum OrderSide {
     BUY,

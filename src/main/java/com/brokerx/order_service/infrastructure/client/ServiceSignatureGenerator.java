@@ -26,11 +26,6 @@ public class ServiceSignatureGenerator {
 
     /**
      * Generates a signed JWT token for service-to-service calls.
-     * The signature includes:
-     * - Service name (who is calling)
-     * - Timestamp (for replay attack prevention)
-     * 
-     * @return A JWT signature that can be validated by the receiving service
      */
     public String generateSignature() {
         long timestamp = System.currentTimeMillis();

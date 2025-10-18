@@ -11,6 +11,9 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Response object for order details
+ */
 public class OrderResponse{
     private Long id;
     private Long stockId;

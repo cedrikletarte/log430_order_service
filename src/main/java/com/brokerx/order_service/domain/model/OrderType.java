@@ -1,7 +1,7 @@
 package com.brokerx.order_service.domain.model;
 
 /**
- * Types d'ordres supportés par la plateforme de courtage
+ * Enum representing the type of an order
  */
 public enum OrderType {
     MARKET,

@@ -10,12 +10,6 @@ public interface PlaceOrderWithIdempotencyUseCase {
     
     /**
      * Place an order with idempotency check
-     * 
-     * @param command the order command
-     * @param idempotencyKey the unique idempotency key
-     * @param ipAddress the client IP address
-     * @param userAgent the client user agent
-     * @return the order response
      */
     PlaceOrderResponse placeOrderWithIdempotency(
             PlaceOrderCommand command, 
@@ -25,19 +19,11 @@ public interface PlaceOrderWithIdempotencyUseCase {
     
     /**
      * Check if a request is duplicate based on idempotency key
-     * 
-     * @param idempotencyKey the unique idempotency key
-     * @param userId the user identifier
-     * @return true if duplicate, false otherwise
      */
     boolean isDuplicateRequest(String idempotencyKey, Long userId);
     
     /**
      * Get cached response for an idempotency key
-     * 
-     * @param idempotencyKey the unique idempotency key
-     * @param userId the user identifier
-     * @return the cached response, or null if not found
      */
     PlaceOrderResponse getCachedResponse(String idempotencyKey, Long userId);
 }

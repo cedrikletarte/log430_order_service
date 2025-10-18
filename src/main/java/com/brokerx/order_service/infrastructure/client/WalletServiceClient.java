@@ -12,7 +12,7 @@ import org.springframework.web.client.HttpClientErrorException;
 
 /**
  * Client for communicating with the Wallet Service.
- * Makes secure internal HTTP calls via X-Service-Token.
+ * Makes secure internal HTTP calls via JWT signature.
  */
 @Slf4j
 @Component
@@ -20,15 +20,15 @@ public class WalletServiceClient {
 
     private final RestTemplate restTemplate;
     private final String walletServiceUrl;
-    private final String serviceSecret;
+    private final ServiceSignatureGenerator signatureGenerator;
 
     public WalletServiceClient(
             RestTemplate restTemplate,
             @Value("${wallet.service.url}") String walletServiceUrl,
-            @Value("${service.secret}") String serviceSecret) {
+            ServiceSignatureGenerator signatureGenerator) {
         this.restTemplate = restTemplate;
         this.walletServiceUrl = walletServiceUrl;
-        this.serviceSecret = serviceSecret;
+        this.signatureGenerator = signatureGenerator;
     }
 
     public WalletResponse getWalletByUserId(Long userId) {
@@ -36,7 +36,7 @@ public class WalletServiceClient {
         
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Service-Token", serviceSecret);
+            headers.set("X-Service-Token", signatureGenerator.generateSignature());
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             
             log.debug("Calling wallet service: GET {}", url);
@@ -73,7 +73,7 @@ public class WalletServiceClient {
         
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Service-Token", serviceSecret);
+            headers.set("X-Service-Token", signatureGenerator.generateSignature());
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             
             log.debug("Calling wallet service to debit: POST {}", url);
@@ -101,7 +101,7 @@ public class WalletServiceClient {
 
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Service-Token", serviceSecret);
+            headers.set("X-Service-Token", signatureGenerator.generateSignature());
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             
             log.debug("Calling wallet service to debit: POST {}", url);

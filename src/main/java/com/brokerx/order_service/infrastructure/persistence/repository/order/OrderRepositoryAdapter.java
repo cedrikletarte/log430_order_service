@@ -45,9 +45,4 @@ public class OrderRepositoryAdapter implements OrderRepositoryPort {
                 .toList();
     }
 
-    @Override
-    public void deleteById(Long id) {
-        springOrderRepository.deleteById(id);
-    }
-
 }

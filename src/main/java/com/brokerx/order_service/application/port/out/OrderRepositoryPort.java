@@ -11,6 +11,4 @@ public interface OrderRepositoryPort {
     Optional<Order> findById(Long id);
 
     List<Order> findByWalletId(Long walletId);
-
-    void deleteById(Long id);
 }

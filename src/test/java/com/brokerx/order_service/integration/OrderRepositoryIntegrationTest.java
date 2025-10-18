@@ -221,31 +221,6 @@ class OrderRepositoryIntegrationTest {
     }
 
     @Test
-    void shouldDeleteOrder() {
-        Order order = Order.builder()
-                .walletId(9L)
-                .stockId(1000L)
-                .side(OrderSide.SELL)
-                .type(OrderType.MARKET)
-                .quantity(12)
-                .status(OrderStatus.PENDING)
-                .build();
-
-        Order saved = orderRepository.save(order);
-        Long orderId = saved.getId();
-
-        // Check that the order exists
-        assertTrue(orderRepository.findById(orderId).isPresent());
-
-        // Delete the order
-        orderRepository.deleteById(orderId);
-
-        // Check that the order no longer exists
-        Optional<Order> deleted = orderRepository.findById(orderId);
-        assertTrue(deleted.isEmpty());
-    }
-
-    @Test
     void shouldHandleBuyOrders() {
         Order buyOrder = Order.builder()
                 .walletId(10L)

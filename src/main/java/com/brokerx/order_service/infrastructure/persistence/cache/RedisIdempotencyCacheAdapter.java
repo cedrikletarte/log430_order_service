@@ -1,4 +1,6 @@
-package com.brokerx.order_service.infrastructure.service;
+package com.brokerx.order_service.infrastructure.persistence.cache;
+
+import com.brokerx.order_service.application.port.out.IdempotencyCachePort;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -9,24 +11,26 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Service to manage idempotency keys using Redis
+ * Redis adapter implementing the IdempotencyCachePort
+ * This is an outbound adapter in hexagonal architecture
  */
 @Slf4j
 @Service
-public class IdempotencyService {
+public class RedisIdempotencyCacheAdapter implements IdempotencyCachePort {
 
     private static final String IDEMPOTENCY_KEY_PREFIX = "idempotency:order:";
     private static final Duration IDEMPOTENCY_KEY_TTL = Duration.ofHours(24); // 24 hours TTL
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public IdempotencyService(RedisTemplate<String, Object> redisTemplate) {
+    public RedisIdempotencyCacheAdapter(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
     /**
      * Check if an idempotency key exists and is valid
      */
+    @Override
     public boolean isDuplicate(String idempotencyKey, Long userId) {
         String redisKey = buildRedisKey(idempotencyKey, userId);
         Boolean exists = redisTemplate.hasKey(redisKey);
@@ -42,6 +46,7 @@ public class IdempotencyService {
     /**
      * Get the cached response for an idempotency key
      */
+    @Override
     public Object getCachedResponse(String idempotencyKey, Long userId) {
         String redisKey = buildRedisKey(idempotencyKey, userId);
         return redisTemplate.opsForValue().get(redisKey);
@@ -50,6 +55,7 @@ public class IdempotencyService {
     /**
      * Store the response for an idempotency key
      */
+    @Override
     public void storeResponse(String idempotencyKey, Long userId, Object response) {
         String redisKey = buildRedisKey(idempotencyKey, userId);
         redisTemplate.opsForValue().set(redisKey, response, IDEMPOTENCY_KEY_TTL.toMillis(), TimeUnit.MILLISECONDS);

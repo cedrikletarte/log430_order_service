@@ -10,7 +10,7 @@ import org.springframework.web.client.HttpClientErrorException;
 
 /**
  * Client to communicate with the Market Service.
- * Makes secure internal HTTP calls via X-Service-Token.
+ * Makes secure internal HTTP calls via JWT signature.
  */
 @Slf4j
 @Component
@@ -18,15 +18,15 @@ public class MarketServiceClient {
 
     private final RestTemplate restTemplate;
     private final String marketServiceUrl;
-    private final String serviceSecret;
+    private final ServiceSignatureGenerator signatureGenerator;
 
     public MarketServiceClient(
             RestTemplate restTemplate,
             @Value("${market.service.url}") String marketServiceUrl,
-            @Value("${service.secret}") String serviceSecret) {
+            ServiceSignatureGenerator signatureGenerator) {
         this.restTemplate = restTemplate;
         this.marketServiceUrl = marketServiceUrl;
-        this.serviceSecret = serviceSecret;
+        this.signatureGenerator = signatureGenerator;
     }
 
     public StockResponse getStockBySymbol(String symbol) {
@@ -34,7 +34,7 @@ public class MarketServiceClient {
         
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Service-Token", serviceSecret);
+            headers.set("X-Service-Token", signatureGenerator.generateSignature());
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             
             log.debug("Calling market service: GET {}", url);
@@ -66,7 +66,7 @@ public class MarketServiceClient {
         
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Service-Token", serviceSecret);
+            headers.set("X-Service-Token", signatureGenerator.generateSignature());
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             
             log.debug("Calling market service: GET {}", url);

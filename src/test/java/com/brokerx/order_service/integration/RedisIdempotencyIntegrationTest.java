@@ -23,11 +23,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import com.brokerx.order_service.infrastructure.config.RedisConfig;
-import com.brokerx.order_service.infrastructure.service.IdempotencyService;
+import com.brokerx.order_service.infrastructure.persistence.cache.RedisIdempotencyCacheAdapter;
 
 @Testcontainers
 @DataRedisTest
-@Import({IdempotencyService.class, RedisConfig.class})
+@Import({RedisIdempotencyCacheAdapter.class, RedisConfig.class})
 class RedisIdempotencyIntegrationTest {
 
     @SuppressWarnings("resource")
@@ -36,7 +36,7 @@ class RedisIdempotencyIntegrationTest {
             .withExposedPorts(6379);
 
     @Autowired
-    private IdempotencyService idempotencyService;
+    private RedisIdempotencyCacheAdapter idempotencyService;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;

@@ -1,5 +1,7 @@
 package com.brokerx.order_service.application.service;
 
+import com.brokerx.order_service.application.port.in.command.CancelOrderCommand;
+import com.brokerx.order_service.application.port.in.command.ModifyOrderCommand;
 import com.brokerx.order_service.application.port.in.command.OrderResponse;
 import com.brokerx.order_service.application.port.in.command.PlaceOrderCommand;
 import com.brokerx.order_service.application.port.in.command.PlaceOrderResponse;
@@ -182,6 +184,94 @@ public class OrderService implements OrderUseCase {
 
         return orders;
     }
+
+    @Override
+    public boolean cancelOrder(CancelOrderCommand command) {
+        Long orderId = command.getOrderId();
+        Long userId = command.getUserId();
+
+        logger.info("Attempting to cancel order {} for user {}", orderId, userId);
+
+        // Récupérer l'ordre
+        Optional<Order> optOrder = orderRepositoryPort.findById(orderId);
+        if (optOrder.isEmpty()) {
+            logger.warn("Cancel failed: order {} not found", orderId);
+            return false;
+        }
+
+        Order order = optOrder.get();
+
+        // Vérifier qu'il appartient bien à l'utilisateur
+        WalletResponse wallet = walletServiceClient.getWalletByUserId(userId);
+        if (wallet == null || !wallet.id().equals(order.getWalletId())) {
+            logger.warn("Cancel failed: order {} does not belong to user {}", orderId, userId);
+            return false;
+        }
+
+        // Vérifier si l’ordre peut être annulé
+        if (order.getStatus() == OrderStatus.FILLED || order.getStatus() == OrderStatus.CANCELLED) {
+            logger.warn("Cancel rejected: order {} already filled or cancelled", orderId);
+            return false;
+        }
+
+        // Mettre à jour l’état
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepositoryPort.save(order);
+        logger.info("Order {} cancelled successfully", orderId);
+
+        // Si achat limite non exécuté, rembourser la somme réservée
+        if (order.getSide() == OrderSide.BUY && order.getLimitPrice() != null) {
+            BigDecimal refundAmount = order.getLimitPrice().multiply(BigDecimal.valueOf(order.getQuantity()));
+            walletServiceClient.creditWallet(userId, refundAmount);
+            logger.info("Refunded {} to user {} for cancelled order {}", refundAmount, userId, orderId);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean modifyOrder(ModifyOrderCommand command) {
+        Long orderId = command.getOrderId();
+        Long userId = command.getUserId();
+
+        logger.info("Attempting to modify order {} for user {}", orderId, userId);
+
+        Optional<Order> optOrder = orderRepositoryPort.findById(orderId);
+        if (optOrder.isEmpty()) {
+            logger.warn("Modify failed: order {} not found", orderId);
+            return false;
+        }
+
+        Order order = optOrder.get();
+
+        WalletResponse wallet = walletServiceClient.getWalletByUserId(userId);
+        if (wallet == null || !wallet.id().equals(order.getWalletId())) {
+            logger.warn("Modify failed: order {} does not belong to user {}", orderId, userId);
+            return false;
+        }
+
+        if (order.getStatus() == OrderStatus.FILLED || order.getStatus() == OrderStatus.CANCELLED) {
+            logger.warn("Modify rejected: order {} already filled or cancelled", orderId);
+            return false;
+        }
+
+        // Appliquer les nouvelles valeurs
+        if (command.getNewQuantity() != null) {
+            order.setQuantity(command.getNewQuantity());
+        }
+        if (command.getNewLimitPrice() != 0) {
+            order.setLimitPrice(BigDecimal.valueOf(command.getNewLimitPrice()));
+        }
+
+        // Repasser les validations pré-trade ?
+        // (optionnel, selon UC05 - tu peux rappeler calculateReservedAmount et vérifier le solde)
+        orderRepositoryPort.save(order);
+        logger.info("Order {} modified successfully", orderId);
+
+        return true;
+    }
+
+
 
     /**
      * Calculates the amount to reserve in the user's wallet based on the order type and price.

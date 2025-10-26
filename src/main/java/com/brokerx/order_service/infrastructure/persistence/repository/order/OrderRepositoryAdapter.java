@@ -45,4 +45,26 @@ public class OrderRepositoryAdapter implements OrderRepositoryPort {
                 .toList();
     }
 
+    @Override
+    public List<Order> findAll() {
+        return springOrderRepository.findAll().stream()
+                .map(orderMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        springOrderRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteAll() {
+        springOrderRepository.deleteAll();
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        return springOrderRepository.existsById(id);
+    }
+
 }

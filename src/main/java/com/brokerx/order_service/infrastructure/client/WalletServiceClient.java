@@ -126,6 +126,7 @@ public class WalletServiceClient {
     public record WalletResponse(
         Long id,
         String currency,
-        BigDecimal balance
+        BigDecimal availableBalance,
+        BigDecimal reservedBalance
     ) {}
 }

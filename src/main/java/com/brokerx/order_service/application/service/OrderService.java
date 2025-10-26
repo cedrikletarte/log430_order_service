@@ -72,15 +72,15 @@ public class OrderService implements OrderUseCase {
         BigDecimal reservedAmount = calculateReservedAmount(command, stockResponse);
 
         // Check if wallet has sufficient balance
-        if (walletResponse.balance().compareTo(reservedAmount) < 0) {
+        if (walletResponse.availableBalance().compareTo(reservedAmount) < 0) {
             String reason = String.format("Insufficient funds. Required: %s, Available: %s", 
-                    reservedAmount, walletResponse.balance());
+                    reservedAmount, walletResponse.availableBalance());
             logger.warn("Order rejected: {}", reason);
             return PlaceOrderResponse.rejected(stockResponse.id(), reason);
         }
 
         logger.info("Wallet balance check passed: required={}, available={}", 
-                reservedAmount, walletResponse.balance());
+                reservedAmount, walletResponse.availableBalance());
 
         // Create the order
         Order order = Order.builder()

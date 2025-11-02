@@ -21,6 +21,7 @@ public class OrderMapper {
                 .limitPrice(order.getLimitPrice())
                 .executedPrice(order.getExecutedPrice())
                 .status(order.getStatus())
+                .createdAt(order.getCreatedAt())
                 .build();
     }
 
@@ -37,6 +38,7 @@ public class OrderMapper {
                 .limitPrice(entity.getLimitPrice())
                 .executedPrice(entity.getExecutedPrice())
                 .status(entity.getStatus())
+                .createdAt(entity.getCreatedAt())
                 .build();
     }
 }

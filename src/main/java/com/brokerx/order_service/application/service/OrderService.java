@@ -15,8 +15,11 @@ import com.brokerx.order_service.infrastructure.client.WalletServiceClient;
 import com.brokerx.order_service.infrastructure.client.MarketServiceClient.StockResponse;
 import com.brokerx.order_service.infrastructure.client.WalletServiceClient.WalletResponse;
 import com.brokerx.order_service.infrastructure.client.MarketServiceClient;
+import com.brokerx.order_service.infrastructure.kafka.dto.OrderAcceptedEvent;
+import com.brokerx.order_service.infrastructure.kafka.producer.OrderEventProducer;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -33,13 +36,16 @@ public class OrderService implements OrderUseCase {
     private final OrderRepositoryPort orderRepositoryPort;
     private final WalletServiceClient walletServiceClient;
     private final MarketServiceClient marketServiceClient;
+    private final OrderEventProducer orderEventProducer;
 
     public OrderService(OrderRepositoryPort orderRepositoryPort,
             WalletServiceClient walletServiceClient,
-            MarketServiceClient marketServiceClient) {
+            MarketServiceClient marketServiceClient,
+            OrderEventProducer orderEventProducer) {
         this.orderRepositoryPort = orderRepositoryPort;
         this.walletServiceClient = walletServiceClient;
         this.marketServiceClient = marketServiceClient;
+        this.orderEventProducer = orderEventProducer;
     }
 
     @Override
@@ -91,7 +97,8 @@ public class OrderService implements OrderUseCase {
                 .quantity(command.getQuantity())
                 .limitPrice(command.getLimitPrice())
                 .executedPrice(command.getType() == OrderType.MARKET ? stockResponse.currentPrice() : null)
-                .status(command.getType() == OrderType.MARKET ? OrderStatus.ACCEPTED : OrderStatus.FILLED)
+                .status(command.getType() == OrderType.MARKET ? OrderStatus.FILLED : OrderStatus.ACCEPTED)
+                .createdAt(Instant.now())
                 .build();
 
         // Save the order via the repository
@@ -100,16 +107,55 @@ public class OrderService implements OrderUseCase {
         logger.info("Order accepted: id={}, walletId={}, stockId={}",
                 savedOrder.getId(), savedOrder.getWalletId(), savedOrder.getStockId());
 
+        // If LIMIT order, publish OrderAccepted event to matching_service for matching
+        if (command.getType() == OrderType.LIMIT) {
+            logger.info("Publishing OrderAccepted event for LIMIT order: id={}, symbol={}, side={}, qty={}, price={}",
+                    savedOrder.getId(), command.getStockSymbol(), command.getSide(), 
+                    command.getQuantity(), command.getLimitPrice());
+
+            if(command.getSide() == OrderSide.BUY) {
+                // Reserve funds in wallet for BUY LIMIT order
+                walletServiceClient.reserveFundsForWallet(walletResponse.id(), reservedAmount);
+                logger.info("Reserved {} in wallet {} for BUY LIMIT order {}", reservedAmount, walletResponse.id(), savedOrder.getId());
+            }
+            
+            OrderAcceptedEvent event = new OrderAcceptedEvent(
+                    savedOrder.getId(),
+                    command.getStockSymbol(),
+                    command.getSide().toString(),
+                    command.getLimitPrice(),
+                    command.getQuantity()
+            );
+            
+            orderEventProducer.publishOrderAccepted(event);
+        }
+
         // If MARKET order and BUY side, execute the transaction immediately and debit the wallet
         if (command.getType() == OrderType.MARKET && command.getSide() == OrderSide.BUY) {
             logger.info("Executing MARKET order: debiting {} from user {}", reservedAmount, command.getUserId());
-            walletServiceClient.debitWallet(command.getUserId(), reservedAmount);
+            //walletServiceClient.debitWallet(command.getUserId(), reservedAmount);
+            walletServiceClient.executeBUY(new WalletServiceClient.PositionResponse(
+                command.getUserId(),
+                command.getStockSymbol(),
+                command.getSide().toString(),
+                command.getQuantity(),
+                stockResponse.currentPrice(),
+                savedOrder.getId()
+            ));
             logger.info("MARKET order executed successfully for order ID: {}", savedOrder.getId());
         }
         // If MARKET order and SELL side, execute the transaction immediately and credit the wallet
         if (command.getType() == OrderType.MARKET && command.getSide() == OrderSide.SELL) {
             logger.info("Executing MARKET order: crediting {} to user {}", reservedAmount, command.getUserId());
-            walletServiceClient.creditWallet(command.getUserId(), reservedAmount);
+            //walletServiceClient.creditWallet(command.getUserId(), reservedAmount);
+            walletServiceClient.executeSELL(new WalletServiceClient.PositionResponse(
+                command.getUserId(),
+                command.getStockSymbol(),
+                command.getSide().toString(),
+                command.getQuantity(),
+                stockResponse.currentPrice(),
+                savedOrder.getId()
+            ));
             logger.info("MARKET order executed successfully for order ID: {}", savedOrder.getId());
         }
 

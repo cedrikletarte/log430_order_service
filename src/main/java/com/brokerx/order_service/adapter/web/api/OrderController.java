@@ -12,6 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.brokerx.order_service.application.port.in.command.CancelOrderCommand;
+import com.brokerx.order_service.application.port.in.command.ModifyOrderCommand;
+import com.brokerx.order_service.domain.model.OrderType;
+import com.brokerx.order_service.domain.model.OrderStatus;
+import java.math.BigDecimal;
+import java.util.Optional;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
@@ -35,6 +42,75 @@ public class OrderController {
             PlaceOrderWithIdempotencyUseCase placeOrderWithIdempotencyUseCase) {
         this.orderUseCase = orderUseCase;
         this.placeOrderWithIdempotencyUseCase = placeOrderWithIdempotencyUseCase;
+    }
+
+    /**
+     * Endpoint to modify a LIMIT order if it is still PENDING or ACCEPTED
+     * PATCH /api/v1/order/{orderId}
+     */
+    @PatchMapping("/{orderId}")
+    public ResponseEntity<String> modifyOrder(
+            @PathVariable Long orderId,
+            @RequestParam(required = false) Integer newQuantity,
+            @RequestParam(required = false) BigDecimal newLimitPrice,
+            Authentication authentication) {
+        String userId = authentication.getPrincipal().toString();
+        Long userIdLong = Long.parseLong(userId);
+
+        // Retrieve the order to check business conditions
+        Optional<OrderResponse> orderOpt = orderUseCase.getOrderById(orderId.toString());
+        if (orderOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found");
+        }
+        OrderResponse order = orderOpt.get();
+
+        // Check that it is a LIMIT order and status is PENDING or ACCEPTED
+        if (!OrderType.LIMIT.name().equals(order.getType())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only LIMIT orders can be modified");
+        }
+        if (!(OrderStatus.PENDING.name().equals(order.getStatus()) || OrderStatus.ACCEPTED.name().equals(order.getStatus()))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Order can only be modified if status is PENDING or ACCEPTED");
+        }
+
+        // Build the modify command
+        ModifyOrderCommand cmd = ModifyOrderCommand.builder()
+                .orderId(orderId)
+                .userId(userIdLong)
+                .newQuantity(newQuantity)
+                .newLimitPrice(newLimitPrice != null ? newLimitPrice.intValue() : 0)
+                .build();
+
+        boolean success = orderUseCase.modifyOrder(cmd);
+        if (success) {
+            return ResponseEntity.ok("Order modified successfully");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Order modification failed");
+        }
+    }
+
+    /**
+     * Endpoint to cancel an order if it belongs to the user
+     * DELETE /api/v1/order/{orderId}
+     */
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<String> cancelOrder(
+            @PathVariable Long orderId,
+            Authentication authentication) {
+        String userId = authentication.getPrincipal().toString();
+        Long userIdLong = Long.parseLong(userId);
+
+        // Build the cancel command
+        CancelOrderCommand cmd = CancelOrderCommand.builder()
+                        .orderId(orderId)
+                        .userId(userIdLong)
+                        .build();
+
+        boolean success = orderUseCase.cancelOrder(cmd);
+        if (success) {
+            return ResponseEntity.ok("Order cancelled successfully");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Order cancellation failed");
+        }
     }
 
     /**

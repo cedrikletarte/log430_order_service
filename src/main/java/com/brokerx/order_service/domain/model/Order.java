@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 /**
  * Domain model representing a stock order
@@ -25,4 +26,5 @@ public class Order {
     private BigDecimal limitPrice;
     private BigDecimal executedPrice;
     private OrderStatus status;
+    private Instant createdAt;
 }

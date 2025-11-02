@@ -35,7 +35,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Swagger endpoint public access
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/**").permitAll()
-                        // Authenticated access to wallet endpoints
+                        // WebSocket endpoint - authentication is handled by WebSocketEventInterceptor
+                        .requestMatchers("/ws/orders/**").permitAll()
+                        // Authenticated access to order endpoints
                         .requestMatchers("/api/v1/order/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session

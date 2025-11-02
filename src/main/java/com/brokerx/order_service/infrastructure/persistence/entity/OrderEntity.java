@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import org.hibernate.envers.Audited;
 
@@ -61,4 +62,7 @@ public class OrderEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private OrderStatus status;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 }

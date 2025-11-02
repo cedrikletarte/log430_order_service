@@ -65,6 +65,17 @@ public class WalletServiceClient {
     }
 
     /**
+     * Get user ID from wallet ID
+     * Since walletId == userId in this system (1-to-1 relationship)
+     */
+    public Long getUserIdByWalletId(Long walletId) {
+        // In this system, walletId and userId are the same (1-to-1 mapping)
+        // The wallet endpoint /internal/wallet/{userId} uses userId as path param
+        // and the returned wallet.id equals the userId
+        return walletId;
+    }
+
+    /**
      * Debit the wallet of a user by a specified amount.
      * Used when executing a MARKET order.
      */
@@ -120,6 +131,81 @@ public class WalletServiceClient {
         }
     }
 
+    public void executeBUY(PositionResponse entity) {
+        String url = walletServiceUrl + "/internal/wallet/execute/buy";
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Service-Token", signatureGenerator.generateSignature());
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<PositionResponse> requestEntity = new HttpEntity<>(entity, headers);
+
+            log.debug("Calling wallet service to execute BUY: POST {}", url);
+
+            restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                requestEntity,
+                Void.class
+            );
+
+            log.info("Successfully executed BUY for {}", entity);
+        } catch (Exception e) {
+            log.error("Error executing BUY for {}: {}", entity, e.getMessage());
+            throw new RuntimeException("Failed to execute BUY", e);
+        }
+    }
+
+    public void executeSELL(PositionResponse entity) {
+        String url = walletServiceUrl + "/internal/wallet/execute/sell";
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Service-Token", signatureGenerator.generateSignature());
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<PositionResponse> requestEntity = new HttpEntity<>(entity, headers);
+
+            log.debug("Calling wallet service to execute SELL: POST {}", url);
+
+            restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                requestEntity,
+                Void.class
+            );
+
+            log.info("Successfully executed SELL for {}", entity);
+        } catch (Exception e) {
+            log.error("Error executing SELL for {}: {}", entity, e.getMessage());
+            throw new RuntimeException("Failed to execute SELL", e);
+        }
+    }
+
+    public void reserveFundsForWallet(Long userId, BigDecimal amount) {
+        String url = walletServiceUrl + "/internal/wallet/reserve/" + userId + "/" + amount;
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Service-Token", signatureGenerator.generateSignature());
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            log.debug("Calling wallet service to reserve funds: POST {}", url);
+
+            restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                Void.class
+            );
+
+            log.info("Successfully reserved {} for user {}", amount, userId);
+        } catch (Exception e) {
+            log.error("Error reserving funds for user ID: {}, amount: {}", userId, amount, e);
+            throw new RuntimeException("Failed to reserve funds", e);
+        }
+    }
+
+
     /**
      * DTO wallet response
      */
@@ -128,5 +214,14 @@ public class WalletServiceClient {
         String currency,
         BigDecimal availableBalance,
         BigDecimal reservedBalance
+    ) {}
+
+    public record PositionResponse(
+        Long userId,
+        String symbol,
+        String side,
+        int quantity,
+        BigDecimal price,
+        Long orderId
     ) {}
 }

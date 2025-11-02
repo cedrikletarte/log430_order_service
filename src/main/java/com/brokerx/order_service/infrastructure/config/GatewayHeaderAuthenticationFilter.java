@@ -83,6 +83,8 @@ public class GatewayHeaderAuthenticationFilter extends OncePerRequestFilter {
         return path.startsWith("/v3/api-docs") ||
                path.startsWith("/actuator/health") ||
                path.startsWith("/actuator/prometheus") ||
+               path.startsWith("/ws/orders") ||  // Exclude all WebSocket/SockJS endpoints
+               path.startsWith("/user/queue/orders") ||
                path.startsWith("/swagger-ui");
     }
 

@@ -5,7 +5,10 @@ import com.brokerx.order_service.application.port.in.command.ModifyOrderCommand;
 import com.brokerx.order_service.application.port.in.command.OrderResponse;
 import com.brokerx.order_service.application.port.in.command.PlaceOrderCommand;
 import com.brokerx.order_service.application.port.in.command.PlaceOrderResponse;
-import com.brokerx.order_service.application.port.in.useCase.OrderUseCase;
+import com.brokerx.order_service.application.port.in.useCase.CancelOrderUseCase;
+import com.brokerx.order_service.application.port.in.useCase.GetOrderUseCase;
+import com.brokerx.order_service.application.port.in.useCase.ModifyOrderUseCase;
+import com.brokerx.order_service.application.port.in.useCase.PlaceOrderUseCase;
 import com.brokerx.order_service.application.port.out.OrderRepositoryPort;
 import com.brokerx.order_service.domain.model.Order;
 import com.brokerx.order_service.domain.model.OrderSide;
@@ -29,7 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @Service
-public class OrderService implements OrderUseCase {
+public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, CancelOrderUseCase, GetOrderUseCase {
 
     private static final Logger logger = LogManager.getLogger(OrderService.class);
 
@@ -115,7 +118,7 @@ public class OrderService implements OrderUseCase {
 
             if(command.getSide() == OrderSide.BUY) {
                 // Reserve funds in wallet for BUY LIMIT order
-                walletServiceClient.reserveFundsForWallet(walletResponse.id(), reservedAmount);
+                walletServiceClient.reserveFundsForWallet(walletResponse.id(), reservedAmount, savedOrder.getId());
                 logger.info("Reserved {} in wallet {} for BUY LIMIT order {}", reservedAmount, walletResponse.id(), savedOrder.getId());
             }
             
@@ -238,7 +241,7 @@ public class OrderService implements OrderUseCase {
 
         logger.info("Attempting to cancel order {} for user {}", orderId, userId);
 
-        // Récupérer l'ordre
+        // Fetch the order
         Optional<Order> optOrder = orderRepositoryPort.findById(orderId);
         if (optOrder.isEmpty()) {
             logger.warn("Cancel failed: order {} not found", orderId);
@@ -247,25 +250,25 @@ public class OrderService implements OrderUseCase {
 
         Order order = optOrder.get();
 
-        // Vérifier qu'il appartient bien à l'utilisateur
+        // Check that it belongs to the user
         WalletResponse wallet = walletServiceClient.getWalletByUserId(userId);
         if (wallet == null || !wallet.id().equals(order.getWalletId())) {
             logger.warn("Cancel failed: order {} does not belong to user {}", orderId, userId);
             return false;
         }
 
-        // Vérifier si l’ordre peut être annulé
+        // Check that it is not already FILLED or CANCELLED
         if (order.getStatus() == OrderStatus.FILLED || order.getStatus() == OrderStatus.CANCELLED) {
             logger.warn("Cancel rejected: order {} already filled or cancelled", orderId);
             return false;
         }
 
-        // Mettre à jour l’état
+        // Update the status
         order.setStatus(OrderStatus.CANCELLED);
         orderRepositoryPort.save(order);
         logger.info("Order {} cancelled successfully", orderId);
 
-        // Si achat limite non exécuté, rembourser la somme réservée
+        // If limit buy not executed, refund the reserved amount
         if (order.getSide() == OrderSide.BUY && order.getLimitPrice() != null) {
             BigDecimal refundAmount = order.getLimitPrice().multiply(BigDecimal.valueOf(order.getQuantity()));
             walletServiceClient.creditWallet(userId, refundAmount);
@@ -301,7 +304,7 @@ public class OrderService implements OrderUseCase {
             return false;
         }
 
-        // Appliquer les nouvelles valeurs
+        // Apply new values
         if (command.getNewQuantity() != null) {
             order.setQuantity(command.getNewQuantity());
         }
@@ -309,8 +312,7 @@ public class OrderService implements OrderUseCase {
             order.setLimitPrice(BigDecimal.valueOf(command.getNewLimitPrice()));
         }
 
-        // Repasser les validations pré-trade ?
-        // (optionnel, selon UC05 - tu peux rappeler calculateReservedAmount et vérifier le solde)
+        // Recalculate reserved amount in wallet
         orderRepositoryPort.save(order);
         logger.info("Order {} modified successfully", orderId);
 

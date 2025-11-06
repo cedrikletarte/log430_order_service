@@ -1,10 +1,15 @@
 package com.brokerx.order_service.adapter.web.api;
 
+import com.brokerx.order_service.adapter.web.dto.CancelOrderResponse;
+import com.brokerx.order_service.adapter.web.dto.ModifyOrderResponse;
 import com.brokerx.order_service.adapter.web.dto.PlaceOrderRequest;
 import com.brokerx.order_service.application.port.in.command.OrderResponse;
 import com.brokerx.order_service.application.port.in.command.PlaceOrderCommand;
 import com.brokerx.order_service.application.port.in.command.PlaceOrderResponse;
-import com.brokerx.order_service.application.port.in.useCase.OrderUseCase;
+import com.brokerx.order_service.application.port.in.useCase.CancelOrderUseCase;
+import com.brokerx.order_service.application.port.in.useCase.GetOrderUseCase;
+import com.brokerx.order_service.application.port.in.useCase.ModifyOrderUseCase;
+import com.brokerx.order_service.application.port.in.useCase.PlaceOrderUseCase;
 import com.brokerx.order_service.application.port.in.useCase.PlaceOrderWithIdempotencyUseCase;
 
 import org.springframework.http.HttpStatus;
@@ -34,13 +39,20 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/v1/order")
 public class OrderController {
 
-    private final OrderUseCase orderUseCase;
+    private final ModifyOrderUseCase modifyOrderUseCase;
+    private final CancelOrderUseCase cancelOrderUseCase;
+    private final GetOrderUseCase getOrderUseCase;
     private final PlaceOrderWithIdempotencyUseCase placeOrderWithIdempotencyUseCase;
 
     public OrderController(
-            OrderUseCase orderUseCase,
+            PlaceOrderUseCase placeOrderUseCase,
+            ModifyOrderUseCase modifyOrderUseCase,
+            CancelOrderUseCase cancelOrderUseCase,
+            GetOrderUseCase getOrderUseCase,
             PlaceOrderWithIdempotencyUseCase placeOrderWithIdempotencyUseCase) {
-        this.orderUseCase = orderUseCase;
+        this.modifyOrderUseCase = modifyOrderUseCase;
+        this.cancelOrderUseCase = cancelOrderUseCase;
+        this.getOrderUseCase = getOrderUseCase;
         this.placeOrderWithIdempotencyUseCase = placeOrderWithIdempotencyUseCase;
     }
 
@@ -49,7 +61,7 @@ public class OrderController {
      * PATCH /api/v1/order/{orderId}
      */
     @PatchMapping("/{orderId}")
-    public ResponseEntity<String> modifyOrder(
+    public ResponseEntity<ModifyOrderResponse> modifyOrder(
             @PathVariable Long orderId,
             @RequestParam(required = false) Integer newQuantity,
             @RequestParam(required = false) BigDecimal newLimitPrice,
@@ -58,18 +70,18 @@ public class OrderController {
         Long userIdLong = Long.parseLong(userId);
 
         // Retrieve the order to check business conditions
-        Optional<OrderResponse> orderOpt = orderUseCase.getOrderById(orderId.toString());
+        Optional<OrderResponse> orderOpt = getOrderUseCase.getOrderById(orderId.toString());
         if (orderOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ModifyOrderResponse(false, "Order not found", orderId));
         }
         OrderResponse order = orderOpt.get();
 
         // Check that it is a LIMIT order and status is PENDING or ACCEPTED
         if (!OrderType.LIMIT.name().equals(order.getType())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Only LIMIT orders can be modified");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ModifyOrderResponse(false, "Only LIMIT orders can be modified", orderId));
         }
         if (!(OrderStatus.PENDING.name().equals(order.getStatus()) || OrderStatus.ACCEPTED.name().equals(order.getStatus()))) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Order can only be modified if status is PENDING or ACCEPTED");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ModifyOrderResponse(false, "Order can only be modified if status is PENDING or ACCEPTED", orderId));
         }
 
         // Build the modify command
@@ -80,11 +92,11 @@ public class OrderController {
                 .newLimitPrice(newLimitPrice != null ? newLimitPrice.intValue() : 0)
                 .build();
 
-        boolean success = orderUseCase.modifyOrder(cmd);
+        boolean success = modifyOrderUseCase.modifyOrder(cmd);
         if (success) {
-            return ResponseEntity.ok("Order modified successfully");
+            return ResponseEntity.ok(new ModifyOrderResponse(true, "Order modified successfully", orderId));
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Order modification failed");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ModifyOrderResponse(false, "Order modification failed", orderId));
         }
     }
 
@@ -93,7 +105,7 @@ public class OrderController {
      * DELETE /api/v1/order/{orderId}
      */
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<String> cancelOrder(
+    public ResponseEntity<CancelOrderResponse> cancelOrder(
             @PathVariable Long orderId,
             Authentication authentication) {
         String userId = authentication.getPrincipal().toString();
@@ -105,11 +117,11 @@ public class OrderController {
                         .userId(userIdLong)
                         .build();
 
-        boolean success = orderUseCase.cancelOrder(cmd);
+        boolean success = cancelOrderUseCase.cancelOrder(cmd);
         if (success) {
-            return ResponseEntity.ok("Order cancelled successfully");
+            return ResponseEntity.ok(new CancelOrderResponse(true, "Order cancelled successfully", orderId));
         } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Order cancellation failed");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new CancelOrderResponse(false, "Order cancellation failed", orderId));
         }
     }
 
@@ -181,7 +193,7 @@ public class OrderController {
         String userId = authentication.getPrincipal().toString();
 
         Long userIdLong = Long.parseLong(userId);
-        List<OrderResponse> orders = orderUseCase.getOrdersByUserId(userIdLong);
+        List<OrderResponse> orders = getOrderUseCase.getOrdersByUserId(userIdLong);
         
         return ResponseEntity.ok(orders);
     }

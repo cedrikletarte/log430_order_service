@@ -2,6 +2,7 @@ package com.brokerx.order_service.infrastructure.kafka.producer;
 
 import com.brokerx.order_service.infrastructure.kafka.dto.OrderAcceptedEvent;
 import com.brokerx.order_service.infrastructure.kafka.dto.OrderExecutedEvent;
+import com.brokerx.order_service.infrastructure.kafka.dto.OrderFailedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,9 @@ public class OrderEventProducer {
 
     @Value("${kafka.topic.order-executed:order.executed}")
     private String orderExecutedTopic;
+
+    @Value("${kafka.topic.order-failed:order.failed}")
+    private String orderFailedTopic;
 
     /**
      * Publish an OrderAccepted event to matching_service
@@ -54,6 +58,21 @@ public class OrderEventProducer {
             log.error("❌ Failed to publish OrderExecuted event for orderId {}: {}", 
                     event.orderId(), e.getMessage(), e);
             throw new RuntimeException("Failed to publish OrderExecuted event", e);
+        }
+    }
+
+    /**
+     * Publish an OrderFailed event to wallet_service for compensation
+     */
+    public void publishOrderFailed(OrderFailedEvent event) {
+        try {
+            kafkaTemplate.send(orderFailedTopic, event.stockSymbol(), event);
+            log.info("📤 Published OrderFailed event to topic {}: orderId={}, walletId={}, amount={}, reason={}",
+                    orderFailedTopic, event.orderId(), event.walletId(), event.totalAmount(), event.reason());
+        } catch (Exception e) {
+            log.error("❌ Failed to publish OrderFailed event for orderId {}: {}", 
+                    event.orderId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to publish OrderFailed event", e);
         }
     }
 }

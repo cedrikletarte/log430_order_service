@@ -2,7 +2,7 @@ package com.brokerx.order_service.application.service;
 
 import com.brokerx.order_service.application.port.in.command.PlaceOrderCommand;
 import com.brokerx.order_service.application.port.in.command.PlaceOrderResponse;
-import com.brokerx.order_service.application.port.in.useCase.OrderUseCase;
+import com.brokerx.order_service.application.port.in.useCase.PlaceOrderUseCase;
 import com.brokerx.order_service.application.port.in.useCase.PlaceOrderWithIdempotencyUseCase;
 import com.brokerx.order_service.application.port.out.IdempotencyCachePort;
 
@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class IdempotentOrderService implements PlaceOrderWithIdempotencyUseCase {
 
-    private final OrderUseCase orderUseCase;
+    private final PlaceOrderUseCase placeOrderUseCase;
     private final IdempotencyCachePort idempotencyCachePort;
 
     @Override
@@ -53,7 +53,7 @@ public class IdempotentOrderService implements PlaceOrderWithIdempotencyUseCase 
         }
         
         // Place the order
-        PlaceOrderResponse response = orderUseCase.placeOrder(command, ipAddress, userAgent);
+        PlaceOrderResponse response = placeOrderUseCase.placeOrder(command, ipAddress, userAgent);
         
         // Store the response in cache with the idempotency key
         idempotencyCachePort.storeResponse(idempotencyKey, command.getUserId(), response);

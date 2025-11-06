@@ -181,8 +181,8 @@ public class WalletServiceClient {
         }
     }
 
-    public void reserveFundsForWallet(Long userId, BigDecimal amount) {
-        String url = walletServiceUrl + "/internal/wallet/reserve/" + userId + "/" + amount;
+    public void reserveFundsForWallet(Long userId, BigDecimal amount, Long orderId) {
+        String url = walletServiceUrl + "/internal/wallet/reserve/" + userId + "/" + amount + "/" + orderId;
 
         try {
             HttpHeaders headers = new HttpHeaders();

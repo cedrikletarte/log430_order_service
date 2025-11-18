@@ -19,15 +19,13 @@ public class SecurityConfig {
 
     private final GatewayHeaderAuthenticationFilter gatewayHeaderAuthenticationFilter;
 
-    /**
-     * Configures the authentication manager bean from the Spring Security
-     * configuration.
-     */
+    /* Configures the authentication manager bean from the Spring Security configuration */
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
+    /* Defines the security filter chain for HTTP requests */
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http

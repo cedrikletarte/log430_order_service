@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/* Command object for modifying an order */
 @Data
 @Builder
 @NoArgsConstructor

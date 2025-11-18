@@ -31,6 +31,7 @@ public class WalletServiceClient {
         this.signatureGenerator = signatureGenerator;
     }
 
+    /* Get wallet information for a user (synchronous read operation) */
     public WalletResponse getWalletByUserId(Long userId) {
         String url = walletServiceUrl + "/internal/wallet/" + userId;
         
@@ -64,21 +65,12 @@ public class WalletServiceClient {
         }
     }
 
-    /**
-     * Get user ID from wallet ID
-     * Since walletId == userId in this system (1-to-1 relationship)
-     */
+    /* Get user ID from wallet ID */
     public Long getUserIdByWalletId(Long walletId) {
-        // In this system, walletId and userId are the same (1-to-1 mapping)
-        // The wallet endpoint /internal/wallet/{userId} uses userId as path param
-        // and the returned wallet.id equals the userId
         return walletId;
     }
 
-    /**
-     * Debit the wallet of a user by a specified amount.
-     * Used when executing a MARKET order.
-     */
+    /* Debit the wallet of a user by a specified amount. */
     public void debitWallet(Long userId, BigDecimal amount) {
         String url = walletServiceUrl + "/internal/wallet/debit/" + userId + "/" + amount;
         
@@ -103,10 +95,7 @@ public class WalletServiceClient {
         }
     }
 
-    /**
-     * Credit the wallet of a user by a specified amount.
-     * Used when executing a MARKET order.
-     */
+    /* Credit the wallet of a user by a specified amount. */
     public void creditWallet(Long userId, BigDecimal amount) {
         String url = walletServiceUrl + "/internal/wallet/credit/" + userId + "/" + amount;
 
@@ -131,6 +120,7 @@ public class WalletServiceClient {
         }
     }
 
+    /* Execute a BUY operation on the wallet */
     public void executeBUY(PositionResponse entity) {
         String url = walletServiceUrl + "/internal/wallet/execute/buy";
 
@@ -156,6 +146,7 @@ public class WalletServiceClient {
         }
     }
 
+    /* Execute a SELL operation on the wallet */
     public void executeSELL(PositionResponse entity) {
         String url = walletServiceUrl + "/internal/wallet/execute/sell";
 
@@ -181,6 +172,7 @@ public class WalletServiceClient {
         }
     }
 
+    /* Reserve funds in the wallet for a specific order */
     public void reserveFundsForWallet(Long userId, BigDecimal amount, Long orderId) {
         String url = walletServiceUrl + "/internal/wallet/reserve/" + userId + "/" + amount + "/" + orderId;
 
@@ -206,9 +198,7 @@ public class WalletServiceClient {
     }
 
 
-    /**
-     * DTO wallet response
-     */
+    /* DTO wallet response */
     public record WalletResponse(
         Long id,
         String currency,
@@ -216,6 +206,7 @@ public class WalletServiceClient {
         BigDecimal reservedBalance
     ) {}
 
+    /* DTO position response for executing trades */
     public record PositionResponse(
         Long userId,
         String symbol,

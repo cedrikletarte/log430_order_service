@@ -31,9 +31,7 @@ import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * REST controller to handle order-related endpoints.
- */
+/* REST controller to handle order-related endpoints. */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/order")
@@ -56,10 +54,7 @@ public class OrderController {
         this.placeOrderWithIdempotencyUseCase = placeOrderWithIdempotencyUseCase;
     }
 
-    /**
-     * Endpoint to modify a LIMIT order if it is still PENDING or ACCEPTED
-     * PATCH /api/v1/order/{orderId}
-     */
+    /* Endpoint to modify a LIMIT order if it is still PENDING or ACCEPTED */
     @PatchMapping("/{orderId}")
     public ResponseEntity<ModifyOrderResponse> modifyOrder(
             @PathVariable Long orderId,
@@ -100,10 +95,7 @@ public class OrderController {
         }
     }
 
-    /**
-     * Endpoint to cancel an order if it belongs to the user
-     * DELETE /api/v1/order/{orderId}
-     */
+    /* Endpoint to cancel an order if it belongs to the user */
     @DeleteMapping("/{orderId}")
     public ResponseEntity<CancelOrderResponse> cancelOrder(
             @PathVariable Long orderId,
@@ -125,10 +117,7 @@ public class OrderController {
         }
     }
 
-    /**
-     * Endpoint for placing a new order
-     * POST /api/order
-     */
+    /* Endpoint for placing a new order */
     @PostMapping
     public ResponseEntity<PlaceOrderResponse> placeOrder(
             @Valid @RequestBody PlaceOrderRequest request,
@@ -167,9 +156,7 @@ public class OrderController {
         return ResponseEntity.status(status).body(response);
     }
 
-    /**
-     * Extracts the client's real IP address, taking into account proxies.
-     */
+    /* Extracts the client's real IP address, taking into account proxies. */
     private String getClientIpAddress(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
@@ -184,10 +171,7 @@ public class OrderController {
         return request.getRemoteAddr();
     }
 
-    /**
-     * Endpoint for retrieving all orders of a user
-     * GET /api/order/user
-     */
+    /* Endpoint for retrieving all orders of a user */
     @GetMapping("/user")
     public ResponseEntity<List<OrderResponse>> getUserOrders(Authentication authentication) {
         String userId = authentication.getPrincipal().toString();

@@ -24,6 +24,7 @@ public class WalletSettledEventConsumer {
     private final OrderRepositoryPort orderRepository;
     private final OrderNotificationService notificationService;
 
+    /* Listens for WalletSettled events and sends notifications */
     @KafkaListener(
         topics = "${kafka.topic.wallet-settled:wallet.settled}",
         groupId = "${spring.kafka.consumer.group-id}"

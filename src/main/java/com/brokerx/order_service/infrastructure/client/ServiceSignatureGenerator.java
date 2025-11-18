@@ -24,9 +24,7 @@ public class ServiceSignatureGenerator {
         this.serviceName = serviceName;
     }
 
-    /**
-     * Generates a signed JWT token for service-to-service calls.
-     */
+    /* Generates a signed JWT token for service-to-service calls. */
     public String generateSignature() {
         long timestamp = System.currentTimeMillis();
         String data = serviceName + ":" + timestamp;

@@ -24,6 +24,7 @@ public class OrderRepositoryAdapter implements OrderRepositoryPort {
         this.orderMapper = orderMapper;
     }
 
+    /* Save an Order */
     @Override
     public Order save(Order order) {
         OrderEntity entity = orderMapper.toEntity(order);
@@ -31,12 +32,14 @@ public class OrderRepositoryAdapter implements OrderRepositoryPort {
         return orderMapper.toDomain(entity);
     }
 
+    /* Find an Order by ID */
     @Override
     public Optional<Order> findById(Long id) {
         return springOrderRepository.findById(id)
                 .map(orderMapper::toDomain);
     }
 
+    /* Find Orders by Wallet ID */
     @Override
     public List<Order> findByWalletId(Long walletId) {
         return springOrderRepository.findByWalletId(walletId)
@@ -45,6 +48,7 @@ public class OrderRepositoryAdapter implements OrderRepositoryPort {
                 .toList();
     }
 
+    /* Find all Orders */
     @Override
     public List<Order> findAll() {
         return springOrderRepository.findAll().stream()
@@ -52,16 +56,19 @@ public class OrderRepositoryAdapter implements OrderRepositoryPort {
                 .toList();
     }
 
+    /* Delete an Order by ID */
     @Override
     public void deleteById(Long id) {
         springOrderRepository.deleteById(id);
     }
 
+    /* Delete all Orders */
     @Override
     public void deleteAll() {
         springOrderRepository.deleteAll();
     }
 
+    /* Check if an Order exists by ID */
     @Override
     public boolean existsById(Long id) {
         return springOrderRepository.existsById(id);

@@ -10,10 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Redis adapter implementing the IdempotencyCachePort
- * This is an outbound adapter in hexagonal architecture
- */
+/* Redis adapter implementing the IdempotencyCachePort */
 @Slf4j
 @Service
 public class RedisIdempotencyCacheAdapter implements IdempotencyCachePort {
@@ -27,9 +24,7 @@ public class RedisIdempotencyCacheAdapter implements IdempotencyCachePort {
         this.redisTemplate = redisTemplate;
     }
 
-    /**
-     * Check if an idempotency key exists and is valid
-     */
+    /* Check if an idempotency key exists and is valid */
     @Override
     public boolean isDuplicate(String idempotencyKey, Long userId) {
         String redisKey = buildRedisKey(idempotencyKey, userId);
@@ -43,18 +38,14 @@ public class RedisIdempotencyCacheAdapter implements IdempotencyCachePort {
         return false;
     }
 
-    /**
-     * Get the cached response for an idempotency key
-     */
+    /* Get the cached response for an idempotency key */
     @Override
     public Object getCachedResponse(String idempotencyKey, Long userId) {
         String redisKey = buildRedisKey(idempotencyKey, userId);
         return redisTemplate.opsForValue().get(redisKey);
     }
 
-    /**
-     * Store the response for an idempotency key
-     */
+    /* Store the response for an idempotency key */
     @Override
     public void storeResponse(String idempotencyKey, Long userId, Object response) {
         String redisKey = buildRedisKey(idempotencyKey, userId);
@@ -63,9 +54,7 @@ public class RedisIdempotencyCacheAdapter implements IdempotencyCachePort {
                 idempotencyKey, userId, IDEMPOTENCY_KEY_TTL.toHours());
     }
 
-    /**
-     * Build the Redis key for an idempotency key
-     */
+    /* Build the Redis key for an idempotency key */
     private String buildRedisKey(String idempotencyKey, Long userId) {
         return IDEMPOTENCY_KEY_PREFIX + userId + ":" + idempotencyKey;
     }

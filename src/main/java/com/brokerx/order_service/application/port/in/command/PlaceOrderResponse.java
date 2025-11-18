@@ -9,10 +9,7 @@ import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Response returned after placing an order
- * Contains confirmation or rejection details
- */
+/* Response returned after placing an order */
 @Data
 @Builder
 @NoArgsConstructor

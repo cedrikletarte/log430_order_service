@@ -7,9 +7,7 @@ import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 
-/**
- * DTO Record for placing an order
- */
+/* DTO Record for placing an order */
 public record PlaceOrderRequest(
         
     @NotNull(message = "The idempotency key is required")

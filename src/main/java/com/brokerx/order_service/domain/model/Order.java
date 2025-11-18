@@ -8,10 +8,7 @@ import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * Domain model representing a stock order
- * Follows DDD principles with embedded business methods
- */
+/* Domain model representing a stock order */
 @Data
 @Builder
 @NoArgsConstructor

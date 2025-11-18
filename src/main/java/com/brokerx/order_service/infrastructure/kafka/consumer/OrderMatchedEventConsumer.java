@@ -27,6 +27,7 @@ public class OrderMatchedEventConsumer {
     private final OrderRepositoryPort orderRepository;
     private final OrderEventProducer orderEventProducer;
 
+    /* Listens for OrderMatched events and processes them */
     @KafkaListener(
         topics = "${kafka.topic.order-matched:order.matched}",
         groupId = "${spring.kafka.consumer.group-id}"

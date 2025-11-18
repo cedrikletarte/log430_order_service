@@ -7,13 +7,11 @@ import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
 
+/* Response object for order details */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-/**
- * Response object for order details
- */
 public class OrderResponse{
     private Long id;
     private Long stockId;

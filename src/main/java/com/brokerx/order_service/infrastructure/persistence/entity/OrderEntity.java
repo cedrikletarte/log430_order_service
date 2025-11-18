@@ -23,6 +23,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/* JPA Entity representing an Order */
 @Data
 @Builder
 @NoArgsConstructor

@@ -51,6 +51,7 @@ public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, Canc
         this.orderEventProducer = orderEventProducer;
     }
 
+    /* Place an order */
     @Override
     public PlaceOrderResponse placeOrder(PlaceOrderCommand command, String ipAddress, String userAgent) {
         logger.info("Placing order: user={}, stock={}, side={}, type={}, qty={}, ip={}",
@@ -172,6 +173,7 @@ public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, Canc
                 reservedAmount);
     }
 
+    /* Retrieve order details */
     @Override
     public Optional<OrderResponse> getOrderById(String orderId) {
         try {
@@ -202,6 +204,7 @@ public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, Canc
         }
     }
 
+    /* Retrieve orders for a specific user */
     @Override
     public List<OrderResponse> getOrdersByUserId(Long userId) {
         WalletResponse walletResponse = walletServiceClient.getWalletByUserId(userId);
@@ -234,6 +237,7 @@ public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, Canc
         return orders;
     }
 
+    /* Cancel an order */
     @Override
     public boolean cancelOrder(CancelOrderCommand command) {
         Long orderId = command.getOrderId();
@@ -278,6 +282,7 @@ public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, Canc
         return true;
     }
 
+    /* Modify an order */
     @Override
     public boolean modifyOrder(ModifyOrderCommand command) {
         Long orderId = command.getOrderId();
@@ -321,9 +326,7 @@ public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, Canc
 
 
 
-    /**
-     * Calculates the amount to reserve in the user's wallet based on the order type and price.
-     */
+    /* Calculates the amount to reserve in the user's wallet based on the order type and price. */
     private BigDecimal calculateReservedAmount(PlaceOrderCommand command,
             MarketServiceClient.StockResponse stockResponse) {
         BigDecimal price;

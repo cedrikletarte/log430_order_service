@@ -20,6 +20,7 @@ public class MatchingFailedEventConsumer {
 
     private final OrderCompensationService compensationService;
 
+    /* Listens for MatchingFailed events and triggers compensation */
     @KafkaListener(
         topics = "${kafka.topic.matching-failed:matching.failed}",
         groupId = "${spring.kafka.consumer.group-id}"

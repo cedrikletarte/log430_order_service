@@ -10,10 +10,7 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-/**
- * Command for placing a new order
- * Represents the input data provided by the client
- */
+/* Command for placing a new order */
 @Data
 @Builder
 @NoArgsConstructor

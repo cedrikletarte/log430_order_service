@@ -29,6 +29,7 @@ public class MarketServiceClient {
         this.signatureGenerator = signatureGenerator;
     }
 
+    /* Get stock information by symbol (synchronous read operation) */
     public StockResponse getStockBySymbol(String symbol) {
         String url = marketServiceUrl + "/internal/stock/" + symbol;
         
@@ -61,6 +62,7 @@ public class MarketServiceClient {
         }
     }
 
+    /* Get stock information by ID (synchronous read operation) */
     public StockResponse getStockById(Long stockId) {
         String url = marketServiceUrl + "/internal/stock/id/" + stockId;
         
@@ -94,9 +96,7 @@ public class MarketServiceClient {
     }
 
 
-    /**
-     * DTO stock response
-     */
+    /* DTO stock response */
     public record StockResponse(
         Long id,
         String symbol,

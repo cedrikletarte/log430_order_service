@@ -8,5 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 
 public interface SpringOrderRepository extends JpaRepository<OrderEntity, Long> {
+
+    /* Find Orders by Wallet ID */
     List<OrderEntity> findByWalletId(Long walletId);
 }

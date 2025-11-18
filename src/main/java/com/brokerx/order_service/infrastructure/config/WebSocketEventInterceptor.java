@@ -37,6 +37,7 @@ public class WebSocketEventInterceptor implements ChannelInterceptor {
     // Track active sessions (sessionId -> userId)
     private final Map<String, String> activeSessions = new ConcurrentHashMap<>();
 
+    /* Intercepts messages to handle authentication and events */
     @Override
     public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
@@ -79,9 +80,7 @@ public class WebSocketEventInterceptor implements ChannelInterceptor {
         return message;
     }
 
-    /**
-     * Handles JWT authentication for WebSocket connections
-     */
+    /* Handles JWT authentication for WebSocket connections */
     private boolean handleAuthentication(StompHeaderAccessor accessor) {
         try {
             String authToken = accessor.getFirstNativeHeader("Authorization");
@@ -119,9 +118,7 @@ public class WebSocketEventInterceptor implements ChannelInterceptor {
         }
     }
 
-    /**
-     * Handles WebSocket connection events
-     */
+    /* Handles WebSocket connection events */
     private void handleConnect(String sessionId, StompHeaderAccessor accessor) {
         String userId = "anonymous";
         var user = accessor.getUser();
@@ -134,50 +131,29 @@ public class WebSocketEventInterceptor implements ChannelInterceptor {
         activeSessions.put(sessionId, userId);
 
         // Connection statistics
-        logConnectionStats();
+        log.info("Active WebSocket connections: {}", activeSessions.size());
     }
 
-    /**
-     * Handles WebSocket disconnection events
-     */
+    /* Handles WebSocket disconnection events */
     private void handleDisconnect(String sessionId) {
         String userId = activeSessions.remove(sessionId);
         log.info("WebSocket disconnected - Session: {}, User: {}", sessionId, userId);
 
         // Connection statistics
-        logConnectionStats();
+        log.info("Active WebSocket connections: {}", activeSessions.size());
     }
 
-    /**
-     * Handles subscription events to topics
-     */
+    /* Handles subscription events to topics */
     private void handleSubscribe(String sessionId, StompHeaderAccessor accessor) {
         String destination = accessor.getDestination();
         String userId = activeSessions.get(sessionId);
         log.debug("Session {} (User: {}) subscribed to: {}", sessionId, userId, destination);
     }
 
-    /**
-     * Handles unsubscription events from topics
-     */
+    /* Handles unsubscription events from topics */
     private void handleUnsubscribe(String sessionId, StompHeaderAccessor accessor) {
         String destination = accessor.getDestination();
         String userId = activeSessions.get(sessionId);
         log.debug("Session {} (User: {}) unsubscribed from: {}", sessionId, userId, destination);
-    }
-
-    /**
-     * Logs connection statistics
-     */
-    private void logConnectionStats() {
-        int activeConnections = activeSessions.size();
-        log.info("Active WebSocket connections: {}", activeConnections);
-    }
-
-    /**
-     * Get active sessions count (useful for monitoring)
-     */
-    public int getActiveSessionsCount() {
-        return activeSessions.size();
     }
 }

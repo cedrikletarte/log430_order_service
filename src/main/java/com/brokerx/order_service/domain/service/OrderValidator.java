@@ -14,9 +14,7 @@ import java.math.BigDecimal;
 @Service
 public class OrderValidator {
     
-    /**
-     * Validates an order before submission
-     */
+    /* Validates an order before submission */
     public void validateForCreation(Order order) {
         validateBasicFields(order);
         validateQuantity(order);
@@ -24,9 +22,7 @@ public class OrderValidator {
         validateBusinessRules(order);
     }
     
-    /**
-     * Validation of mandatory fields
-     */
+    /* Validation of mandatory fields */
     private void validateBasicFields(Order order) {
         if (order.getStockId() == null) {
             throw new OrderException("MISSING_STOCK_ID", "L'identifiant du stock est obligatoire");
@@ -45,9 +41,7 @@ public class OrderValidator {
         }
     }
     
-    /**
-     * Validation of quantity
-     */
+    /* Validation of quantity */
     private void validateQuantity(Order order) {
         int quantity = order.getQuantity();
         
@@ -56,9 +50,7 @@ public class OrderValidator {
         }
     }
     
-    /**
-     * Validation of price for LIMIT orders
-     */
+    /* Validation of price for LIMIT orders */
     private void validatePrice(Order order) {
         if (order.getType() == OrderType.LIMIT) {
             BigDecimal price = order.getLimitPrice();
@@ -71,12 +63,12 @@ public class OrderValidator {
                 throw new OrderException("INVALID_PRICE", "Le prix doit être positif");
             }
             
-            // Vérifier que le prix a au maximum 2 décimales
+            // Verify that the price has at most 2 decimal places
             if (price.scale() > 2) {
                 throw new OrderException("INVALID_PRICE_PRECISION", "Le prix ne peut avoir plus de 2 décimales");
             }
         } else if (order.getType() == OrderType.MARKET) {
-            // Les ordres MARKET ne doivent pas avoir de prix
+            // MARKET orders must not have a price
             if (order.getExecutedPrice() != null) {
                 throw new OrderException("MARKET_ORDER_WITH_PRICE", 
                     "Un ordre MARKET ne doit pas spécifier de prix");
@@ -84,9 +76,7 @@ public class OrderValidator {
         }
     }
     
-    /**
-     * Validation of complex business rules
-     */
+    /* Validation of complex business rules */
     private void validateBusinessRules(Order order) {
         // Verify that the order quantity does not exceed a maximum limit
         int maxQuantity = 1000000;

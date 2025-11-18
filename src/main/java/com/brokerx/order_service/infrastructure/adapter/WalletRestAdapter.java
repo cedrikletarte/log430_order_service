@@ -7,11 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Adapter that implements WalletPort using REST client
- * This follows hexagonal architecture by adapting infrastructure to application port
- * Only used for synchronous read operations (queries)
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -19,6 +14,7 @@ public class WalletRestAdapter implements WalletPort {
     
     private final WalletServiceClient walletServiceClient;
     
+    /* Get wallet information for a user (synchronous read operation) */
     @Override
     public WalletData getWalletByUserId(Long userId) {
         WalletResponse response = walletServiceClient.getWalletByUserId(userId);

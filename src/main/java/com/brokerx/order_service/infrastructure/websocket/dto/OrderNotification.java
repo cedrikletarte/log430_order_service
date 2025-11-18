@@ -3,9 +3,7 @@ package com.brokerx.order_service.infrastructure.websocket.dto;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * DTO for order execution notifications sent via WebSocket
- */
+/* DTO for order execution notifications sent via WebSocket */
 public record OrderNotification(
     Long orderId,
     String stockSymbol,
@@ -18,9 +16,7 @@ public record OrderNotification(
     Instant executedAt,
     String message
 ) {
-    /**
-     * Create a notification for a filled order
-     */
+    /* Create a notification for a filled order */
     public static OrderNotification filled(
             Long orderId,
             String stockSymbol,
@@ -50,9 +46,7 @@ public record OrderNotification(
         );
     }
 
-    /**
-     * Create a notification for a partially filled order
-     */
+    /* Create a notification for a partially filled order */
     public static OrderNotification partiallyFilled(
             Long orderId,
             String stockSymbol,
@@ -83,9 +77,7 @@ public record OrderNotification(
         );
     }
 
-    /**
-     * Create a notification for a rejected order
-     */
+    /* Create a notification for a rejected order */
     public static OrderNotification rejected(
             Long orderId,
             String stockSymbol,
@@ -113,9 +105,7 @@ public record OrderNotification(
         );
     }
 
-    /**
-     * Create a notification for a cancelled order
-     */
+    /* Create a notification for a cancelled order */
     public static OrderNotification cancelled(
             Long orderId,
             String stockSymbol,

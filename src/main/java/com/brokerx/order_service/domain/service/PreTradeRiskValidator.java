@@ -8,15 +8,11 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
-/**
- * Service for pre-trade risk validations
- */
+/* Service for pre-trade risk validations */
 @Service
 public class PreTradeRiskValidator {
     
-    /**
-     * Validates purchasing power for a buy order
-     */
+    /* Validates purchasing power for a buy order */
     public void validatePurchasingPower(Order order, BigDecimal availableBalance, BigDecimal currentPrice) {
         if (order.getSide() != OrderSide.BUY) {
             return; // No purchasing power check for sell orders
@@ -29,9 +25,7 @@ public class PreTradeRiskValidator {
         }
     }
     
-    /**
-     * Validates price bands to prevent anomalous orders
-     */
+    /* Validates price bands to prevent anomalous orders */
     public void validatePriceBands(Order order, BigDecimal currentPrice, BigDecimal maxDeviationPercent) {
         if (order.getType() != OrderType.LIMIT || order.getLimitPrice() == null || currentPrice == null) {
             return; // No check for MARKET orders or without reference price
@@ -48,9 +42,7 @@ public class PreTradeRiskValidator {
         }
     }
     
-    /**
-     * Validates user limits (max size, max notional)
-     */
+    /* Validates user limits (max size, max notional) */
     public void validateUserLimits(Order order, BigDecimal userDailyVolume, 
                                  BigDecimal maxDailyVolume, BigDecimal maxSingleOrderNotional) {
         
@@ -72,9 +64,7 @@ public class PreTradeRiskValidator {
     }
     
     
-    /**
-     * Calculate the required amount to reserve for a BUY order
-     */
+    /* Calculate the required amount to reserve for a BUY order */
     private BigDecimal calculateRequiredAmount(Order order, BigDecimal currentPrice) {
         int quantity = order.getQuantity();
         
@@ -90,9 +80,7 @@ public class PreTradeRiskValidator {
             "Impossible de calculer le montant requis pour cet ordre");
     }
     
-    /**
-     * Calculate the notional value of an order
-     */
+    /* Calculate the notional value of an order */
     private BigDecimal calculateOrderNotional(Order order) {
         if (order.getType() == OrderType.LIMIT && order.getLimitPrice() != null) {
             return BigDecimal.valueOf(order.getQuantity()).multiply(order.getLimitPrice());

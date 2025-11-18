@@ -5,6 +5,7 @@ import com.brokerx.order_service.infrastructure.persistence.entity.OrderEntity;
 
 import org.springframework.stereotype.Component;
 
+/* Mapper for converting between Order domain model and OrderEntity */
 @Component
 public class OrderMapper {
 

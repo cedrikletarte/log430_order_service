@@ -17,13 +17,7 @@ public class OrderNotificationService {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    /**
-     * Send order notification to a specific user
-     * The message will be sent to /user/{userId}/queue/orders
-     * 
-     * @param userId The user ID (from JWT subject - user ID as string)
-     * @param notification The notification payload
-     */
+    /* Send order notification to a specific user */
     public void sendOrderNotificationToUser(String userId, OrderNotification notification) {
         try {
             String destination = "/queue/orders";
@@ -41,13 +35,7 @@ public class OrderNotificationService {
         }
     }
 
-    /**
-     * Broadcast order notification to all connected clients
-     * The message will be sent to /topic/orders
-     * Useful for admin dashboard or market-wide notifications
-     * 
-     * @param notification The notification payload
-     */
+    /* Broadcast order notification to all connected clients */
     public void broadcastOrderNotification(OrderNotification notification) {
         try {
             messagingTemplate.convertAndSend("/topic/orders", notification);
@@ -59,13 +47,7 @@ public class OrderNotificationService {
         }
     }
 
-    /**
-     * Send order execution notification to a specific user
-     * This is the main method used when an order is executed
-     * 
-     * @param userId The user ID who placed the order
-     * @param notification The execution notification
-     */
+    /* Send order execution notification to a specific user */
     public void notifyOrderExecution(String userId, OrderNotification notification) {
         sendOrderNotificationToUser(userId, notification);
         

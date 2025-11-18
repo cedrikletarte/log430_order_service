@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/* Command object for canceling an order */
 @Data
 @Builder
 @NoArgsConstructor

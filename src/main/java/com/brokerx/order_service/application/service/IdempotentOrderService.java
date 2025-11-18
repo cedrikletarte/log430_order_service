@@ -23,6 +23,7 @@ public class IdempotentOrderService implements PlaceOrderWithIdempotencyUseCase 
     private final PlaceOrderUseCase placeOrderUseCase;
     private final IdempotencyCachePort idempotencyCachePort;
 
+    /* Place an order with idempotency check */
     @Override
     public PlaceOrderResponse placeOrderWithIdempotency(
             PlaceOrderCommand command,
@@ -61,11 +62,13 @@ public class IdempotentOrderService implements PlaceOrderWithIdempotencyUseCase 
         return response;
     }
 
+    /* Check if a request is duplicate based on idempotency key */
     @Override
     public boolean isDuplicateRequest(String idempotencyKey, Long userId) {
         return idempotencyCachePort.isDuplicate(idempotencyKey, userId);
     }
 
+    /* Get cached response for an idempotency key */
     @Override
     public PlaceOrderResponse getCachedResponse(String idempotencyKey, Long userId) {
         Object cachedResponse = idempotencyCachePort.getCachedResponse(idempotencyKey, userId);

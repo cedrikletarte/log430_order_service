@@ -17,10 +17,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       GATEWAY_SECRET: ${GATEWAY_SECRET}
       SERVICE_SECRET: ${SERVICE_SECRET}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092 # adresse du broker Kafka
-      KAFKA_TOPIC_ORDER_ACCEPTED: order.accepted # topic des ordres acceptés
-      KAFKA_TOPIC_ORDER_MATCHED: order.matched # topic des ordres appariés
-      KAFKA_TOPIC_ORDER_EXECUTED: order.executed # topic des ordres exécutés
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092 # Kafka broker address
+      KAFKA_TOPIC_ORDER_ACCEPTED: order.accepted # accepted orders topic
+      KAFKA_TOPIC_ORDER_MATCHED: order.matched # matched orders topic
+      KAFKA_TOPIC_ORDER_EXECUTED: order.executed # executed orders topic
     restart: always
     networks:
       - brokerx-network

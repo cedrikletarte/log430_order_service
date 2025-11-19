@@ -1,6 +1,7 @@
 package com.brokerx.order_service.infrastructure.kafka.producer;
 
 import com.brokerx.order_service.infrastructure.kafka.dto.OrderAcceptedEvent;
+import com.brokerx.order_service.infrastructure.kafka.dto.OrderCancelledEvent;
 import com.brokerx.order_service.infrastructure.kafka.dto.OrderExecutedEvent;
 import com.brokerx.order_service.infrastructure.kafka.dto.OrderFailedEvent;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,9 @@ public class OrderEventProducer {
     @Value("${kafka.topic.order-accepted:order.accepted}")
     private String orderAcceptedTopic;
 
+    @Value("${kafka.topic.order-cancelled:order.cancelled}")
+    private String orderCancelledTopic;
+
     @Value("${kafka.topic.order-executed:order.executed}")
     private String orderExecutedTopic;
 
@@ -37,6 +41,19 @@ public class OrderEventProducer {
             log.error("Failed to publish OrderAccepted event for orderId {}: {}", 
                     event.orderId(), e.getMessage(), e);
             throw new RuntimeException("Failed to publish OrderAccepted event", e);
+        }
+    }
+
+    /* Publish an OrderCancelled event to matching_service */
+    public void publishOrderCancelled(OrderCancelledEvent event) {
+        try {
+            kafkaTemplate.send(orderCancelledTopic, event.stockSymbol(), event);
+            log.info("Published OrderCancelled event to topic {}: orderId={}, symbol={}, side={}",
+                    orderCancelledTopic, event.orderId(), event.stockSymbol(), event.side());
+        } catch (Exception e) {
+            log.error("Failed to publish OrderCancelled event for orderId {}: {}", 
+                    event.orderId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to publish OrderCancelled event", e);
         }
     }
 

@@ -20,6 +20,8 @@ public class Order {
     private OrderSide side;
     private OrderType type;
     private int quantity;
+    private int executedQuantity;
+    private int remainingQuantity;
     private BigDecimal limitPrice;
     private BigDecimal executedPrice;
     private OrderStatus status;

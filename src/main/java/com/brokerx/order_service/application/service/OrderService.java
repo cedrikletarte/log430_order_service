@@ -19,6 +19,7 @@ import com.brokerx.order_service.infrastructure.client.MarketServiceClient.Stock
 import com.brokerx.order_service.infrastructure.client.WalletServiceClient.WalletResponse;
 import com.brokerx.order_service.infrastructure.client.MarketServiceClient;
 import com.brokerx.order_service.infrastructure.kafka.dto.OrderAcceptedEvent;
+import com.brokerx.order_service.infrastructure.kafka.dto.OrderCancelledEvent;
 import com.brokerx.order_service.infrastructure.kafka.producer.OrderEventProducer;
 
 import java.math.BigDecimal;
@@ -99,6 +100,8 @@ public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, Canc
                 .side(command.getSide())
                 .type(command.getType())
                 .quantity(command.getQuantity())
+                .executedQuantity(command.getType() == OrderType.MARKET ? command.getQuantity() : 0)
+                .remainingQuantity(command.getType() == OrderType.MARKET ? 0 : command.getQuantity())
                 .limitPrice(command.getLimitPrice())
                 .executedPrice(command.getType() == OrderType.MARKET ? stockResponse.currentPrice() : null)
                 .status(command.getType() == OrderType.MARKET ? OrderStatus.FILLED : OrderStatus.ACCEPTED)
@@ -272,11 +275,25 @@ public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, Canc
         orderRepositoryPort.save(order);
         logger.info("Order {} cancelled successfully", orderId);
 
-        // If limit buy not executed, refund the reserved amount
-        if (order.getSide() == OrderSide.BUY && order.getLimitPrice() != null) {
-            BigDecimal refundAmount = order.getLimitPrice().multiply(BigDecimal.valueOf(order.getQuantity()));
+        // Publish OrderCancelled event to matching_service to remove from order book
+        // Only publish if it's a LIMIT order that could be in the matching engine
+        if (order.getLimitPrice() != null) {
+            StockResponse stock = marketServiceClient.getStockById(order.getStockId());
+            OrderCancelledEvent cancelledEvent = new OrderCancelledEvent(
+                    orderId,
+                    stock.symbol(),
+                    order.getSide().name()
+            );
+            orderEventProducer.publishOrderCancelled(cancelledEvent);
+            logger.info("Published OrderCancelled event for orderId={}, symbol={}", orderId, stock.symbol());
+        }
+
+        // If limit buy not executed or partially executed, refund the reserved amount for remaining quantity
+        if (order.getSide() == OrderSide.BUY && order.getLimitPrice() != null && order.getRemainingQuantity() > 0) {
+            BigDecimal refundAmount = order.getLimitPrice().multiply(BigDecimal.valueOf(order.getRemainingQuantity()));
             walletServiceClient.creditWallet(userId, refundAmount);
-            logger.info("Refunded {} to user {} for cancelled order {}", refundAmount, userId, orderId);
+            logger.info("Refunded {} to user {} for cancelled order {} (remaining qty: {})", 
+                    refundAmount, userId, orderId, order.getRemainingQuantity());
         }
 
         return true;
@@ -309,17 +326,48 @@ public class OrderService implements PlaceOrderUseCase, ModifyOrderUseCase, Canc
             return false;
         }
 
+        // Get stock symbol for event publishing
+        StockResponse stock = marketServiceClient.getStockById(order.getStockId());
+        
+        // First, cancel the old order in matching_service order book
+        if (order.getLimitPrice() != null) {
+            OrderCancelledEvent cancelledEvent = new OrderCancelledEvent(
+                    orderId,
+                    stock.symbol(),
+                    order.getSide().name()
+            );
+            orderEventProducer.publishOrderCancelled(cancelledEvent);
+            logger.info("Published OrderCancelled event for modification: orderId={}, symbol={}", 
+                    orderId, stock.symbol());
+        }
+
         // Apply new values
         if (command.getNewQuantity() != null) {
             order.setQuantity(command.getNewQuantity());
+            order.setRemainingQuantity(command.getNewQuantity()); // Reset remaining quantity
         }
         if (command.getNewLimitPrice() != 0) {
             order.setLimitPrice(BigDecimal.valueOf(command.getNewLimitPrice()));
         }
 
-        // Recalculate reserved amount in wallet
+        // Save modified order
         orderRepositoryPort.save(order);
-        logger.info("Order {} modified successfully", orderId);
+        logger.info("Order {} modified successfully: qty={}, price={}", 
+                orderId, order.getQuantity(), order.getLimitPrice());
+
+        // Publish the modified order as a new OrderAccepted event to matching_service
+        if (order.getLimitPrice() != null) {
+            OrderAcceptedEvent acceptedEvent = new OrderAcceptedEvent(
+                    orderId,
+                    stock.symbol(),
+                    order.getSide().name(),
+                    order.getLimitPrice(),
+                    order.getQuantity()
+            );
+            orderEventProducer.publishOrderAccepted(acceptedEvent);
+            logger.info("Published OrderAccepted event for modified order: orderId={}, symbol={}, qty={} @ {}", 
+                    orderId, stock.symbol(), order.getQuantity(), order.getLimitPrice());
+        }
 
         return true;
     }

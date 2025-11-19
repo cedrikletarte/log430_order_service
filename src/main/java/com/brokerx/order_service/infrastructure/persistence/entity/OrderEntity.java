@@ -54,6 +54,12 @@ public class OrderEntity {
     @Column(name = "quantity", nullable = false)
     private int quantity;
 
+    @Column(name = "executed_quantity", nullable = false)
+    private int executedQuantity;
+
+    @Column(name = "remaining_quantity", nullable = false)
+    private int remainingQuantity;
+
     @Column(name = "limit_price")
     private BigDecimal limitPrice;
 

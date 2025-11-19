@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * Kafka consumer for handling OrderMatched events from matching_service
@@ -34,7 +35,7 @@ public class OrderMatchedEventConsumer {
     )
     @Transactional
     public void handleOrderMatched(OrderMatchedEvent event) {
-        log.info("📥 Received OrderMatched event: buyOrderId={}, sellOrderId={}, symbol={}, qty={} @ {}",
+        log.info("Received OrderMatched event: buyOrderId={}, sellOrderId={}, symbol={}, qty={} @ {}",
                 event.buyOrderId(), event.sellOrderId(), event.stockSymbol(), 
                 event.quantity(), event.executionPrice());
 
@@ -43,10 +44,10 @@ public class OrderMatchedEventConsumer {
             processMatchedOrder(event.buyOrderId(), event.quantity(), event.executionPrice(), "BUY", event.stockSymbol());
             processMatchedOrder(event.sellOrderId(), event.quantity(), event.executionPrice(), "SELL", event.stockSymbol());
 
-            log.info("✅ Successfully processed OrderMatched event for orders {} and {}",
+            log.info("Successfully processed OrderMatched event for orders {} and {}",
                     event.buyOrderId(), event.sellOrderId());
         } catch (Exception e) {
-            log.error("❌ Failed to process OrderMatched event: {}", e.getMessage(), e);
+            log.error("Failed to process OrderMatched event: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to process OrderMatched event", e);
         }
     }
@@ -57,9 +58,32 @@ public class OrderMatchedEventConsumer {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
 
-        // Update order with execution details
-        order.setExecutedPrice(executionPrice);
-        order.setStatus(OrderStatus.FILLED);
+        // Update executed quantity and remaining quantity
+        int newExecutedQuantity = order.getExecutedQuantity() + matchedQuantity;
+        int newRemainingQuantity = order.getRemainingQuantity() - matchedQuantity;
+        
+        order.setExecutedQuantity(newExecutedQuantity);
+        order.setRemainingQuantity(newRemainingQuantity);
+        
+        // Calculate weighted average execution price if there were previous executions
+        if (order.getExecutedPrice() != null && order.getExecutedQuantity() > matchedQuantity) {
+            // Weighted average: (prevPrice * prevQty + newPrice * newQty) / totalQty
+            int previousQuantity = order.getExecutedQuantity() - matchedQuantity;
+            BigDecimal previousTotal = order.getExecutedPrice().multiply(BigDecimal.valueOf(previousQuantity));
+            BigDecimal newTotal = executionPrice.multiply(BigDecimal.valueOf(matchedQuantity));
+            BigDecimal averagePrice = previousTotal.add(newTotal)
+                    .divide(BigDecimal.valueOf(order.getExecutedQuantity()), 2, RoundingMode.HALF_UP);
+            order.setExecutedPrice(averagePrice);
+        } else {
+            order.setExecutedPrice(executionPrice);
+        }
+        
+        // Update status based on remaining quantity
+        if (newRemainingQuantity == 0) {
+            order.setStatus(OrderStatus.FILLED);
+        } else {
+            order.setStatus(OrderStatus.PARTIALLY_FILLED);
+        }
 
         // Save updated order
         orderRepository.save(order);
@@ -84,7 +108,7 @@ public class OrderMatchedEventConsumer {
         // after wallet settlement completes (Saga Choreography pattern)
         // This ensures the wallet is updated BEFORE the user is notified
 
-        log.info("📊 Order {} updated: status=FILLED, executedPrice={}, totalAmount={}",
+        log.info("Order {} updated: status=FILLED, executedPrice={}, totalAmount={}",
                 orderId, executionPrice, totalAmount);
     }
 }

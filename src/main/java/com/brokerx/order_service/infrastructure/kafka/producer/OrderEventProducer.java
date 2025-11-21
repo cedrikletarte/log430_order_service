@@ -61,12 +61,13 @@ public class OrderEventProducer {
     public void publishOrderExecuted(OrderExecutedEvent event) {
         try {
             kafkaTemplate.send(orderExecutedTopic, event.stockSymbol(), event);
-            log.info("Published OrderExecuted event to topic {}: orderId={}, walletId={}, qty={} @ {}, total={}",
-                    orderExecutedTopic, event.orderId(), event.walletId(), event.quantity(), 
-                    event.executionPrice(), event.totalAmount());
+            log.info("Published OrderExecuted event to topic {}: buyOrderId={}, sellOrderId={}, buyerWallet={}, sellerWallet={}, qty={} @ {}, total={}",
+                    orderExecutedTopic, event.buyOrderId(), event.sellOrderId(), 
+                    event.buyerWalletId(), event.sellerWalletId(), 
+                    event.quantity(), event.executionPrice(), event.totalAmount());
         } catch (Exception e) {
-            log.error("Failed to publish OrderExecuted event for orderId {}: {}", 
-                    event.orderId(), e.getMessage(), e);
+            log.error("Failed to publish OrderExecuted event for orders {} and {}: {}", 
+                    event.buyOrderId(), event.sellOrderId(), e.getMessage(), e);
             throw new RuntimeException("Failed to publish OrderExecuted event", e);
         }
     }

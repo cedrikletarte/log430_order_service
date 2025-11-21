@@ -41,10 +41,27 @@ public class OrderMatchedEventConsumer {
 
         try {
             // Update both buy and sell orders
-            processMatchedOrder(event.buyOrderId(), event.quantity(), event.executionPrice(), "BUY", event.stockSymbol());
-            processMatchedOrder(event.sellOrderId(), event.quantity(), event.executionPrice(), "SELL", event.stockSymbol());
+            Order buyOrder = processMatchedOrder(event.buyOrderId(), event.quantity(), event.executionPrice());
+            Order sellOrder = processMatchedOrder(event.sellOrderId(), event.quantity(), event.executionPrice());
 
-            log.info("Successfully processed OrderMatched event for orders {} and {}",
+            // Calculate total amount for wallet transaction
+            BigDecimal totalAmount = event.executionPrice().multiply(BigDecimal.valueOf(event.quantity()));
+
+            // Publish single OrderExecuted event with both buyer and seller info
+            OrderExecutedEvent executedEvent = new OrderExecutedEvent(
+                    event.buyOrderId(),
+                    event.sellOrderId(),
+                    buyOrder.getWalletId(),
+                    sellOrder.getWalletId(),
+                    event.stockSymbol(),
+                    event.quantity(),
+                    event.executionPrice(),
+                    totalAmount
+            );
+
+            orderEventProducer.publishOrderExecuted(executedEvent);
+
+            log.info("Successfully processed OrderMatched event for orders {} and {} - Published single OrderExecuted event",
                     event.buyOrderId(), event.sellOrderId());
         } catch (Exception e) {
             log.error("Failed to process OrderMatched event: {}", e.getMessage(), e);
@@ -52,11 +69,23 @@ public class OrderMatchedEventConsumer {
         }
     }
 
-    private void processMatchedOrder(Long orderId, Integer matchedQuantity, BigDecimal executionPrice, 
-                                     String side, String stockSymbol) {
+    private Order processMatchedOrder(Long orderId, Integer matchedQuantity, BigDecimal executionPrice) {
         // Find the order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        // Skip if order is already FILLED (prevents re-processing old matches)
+        if (order.getStatus() == OrderStatus.FILLED) {
+            log.warn("Order {} is already FILLED, skipping match processing", orderId);
+            return order;
+        }
+
+        // Validate remaining quantity (prevent processing duplicate events)
+        if (order.getRemainingQuantity() < matchedQuantity) {
+            log.error("Order {} has remainingQuantity={} but match wants to fill {}. Possible duplicate event!",
+                    orderId, order.getRemainingQuantity(), matchedQuantity);
+            return order;
+        }
 
         // Update executed quantity and remaining quantity
         int newExecutedQuantity = order.getExecutedQuantity() + matchedQuantity;
@@ -88,27 +117,9 @@ public class OrderMatchedEventConsumer {
         // Save updated order
         orderRepository.save(order);
 
-        // Calculate total amount for wallet transaction
-        BigDecimal totalAmount = executionPrice.multiply(BigDecimal.valueOf(matchedQuantity));
-
-        // Publish OrderExecuted event to wallet_service for settlement
-        OrderExecutedEvent executedEvent = new OrderExecutedEvent(
-                orderId,
-                order.getWalletId(),
-                side,
-                stockSymbol,
-                matchedQuantity,
-                executionPrice,
-                totalAmount
-        );
-
-        orderEventProducer.publishOrderExecuted(executedEvent);
-
-        // Note: WebSocket notification will be sent by WalletSettledEventConsumer
-        // after wallet settlement completes (Saga Choreography pattern)
-        // This ensures the wallet is updated BEFORE the user is notified
-
-        log.info("Order {} updated: status=FILLED, executedPrice={}, totalAmount={}",
-                orderId, executionPrice, totalAmount);
+        log.info("Order {} updated: status={}, executedQty={}, remainingQty={}, executedPrice={}",
+                orderId, order.getStatus(), newExecutedQuantity, newRemainingQuantity, executionPrice);
+        
+        return order;
     }
 }
